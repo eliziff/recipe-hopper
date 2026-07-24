@@ -74,7 +74,7 @@
       .slice(6).replaceAll("-", " ");
     const costScore = recipe => {
       const text = `${recipe.title} ${recipe.ingredients.join(" ")}`.toLowerCase();
-      const staples = ["bean","lentil","chickpea","potato","rice","pasta","egg","tofu","carrot","frozen","canned","chicken thigh","ground "];
+      const staples = ["bean","lentil","chickpea","potato","rice","pasta","egg","carrot","frozen","canned","chicken thigh","ground "];
       const costly = ["lamb","tenderloin","sashimi","scallop","prosciutto","blue cheese","truffle","lobster","salmon"];
       return costly.filter(word => text.includes(word)).length * 4 - staples.filter(word => text.includes(word)).length;
     };
