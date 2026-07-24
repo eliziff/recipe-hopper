@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Sesame Chicken With Broccoli &middot; Recipe Hopper</title>
+    <link rel="icon" type="image/x-icon" href="/recipe-hopper/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/recipe-hopper/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/recipe-hopper/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/recipe-hopper/static/apple-touch-icon.png">
+    <link rel="manifest" href="/recipe-hopper/static/site.webmanifest">
+    <link href="/recipe-hopper/static/css/output.css" rel="stylesheet">
+    <link href="/recipe-hopper/static/css/custom-styles.css" rel="stylesheet">
+    <script>
+        // Check for saved theme preference or default to light
+        const theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+    </script>
+    <style>
+        .viewport {
+            width: 100%;
+            max-width: 72rem;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Dark mode styles */
+        .dark {
+            color-scheme: dark;
+        }
+
+        .dark body {
+            background-color: #111827;
+        }
+
+        .dark .bg-gray-50 {
+            background-color: #111827;
+        }
+
+        .dark .bg-white {
+            background-color: #1f2937;
+        }
+
+        .dark .text-gray-900 {
+            color: #f9fafb;
+        }
+
+        .dark .text-gray-800 {
+            color: #e5e7eb;
+        }
+
+        .dark .text-gray-700 {
+            color: #d1d5db;
+        }
+
+        .dark .text-gray-600 {
+            color: #9ca3af;
+        }
+
+        .dark .text-gray-500 {
+            color: #6b7280;
+        }
+
+        .dark .text-gray-400 {
+            color: #9ca3af;
+        }
+
+        .dark .border-gray-300 {
+            border-color: #4b5563;
+        }
+
+        .dark .border-gray-200 {
+            border-color: #374151;
+        }
+
+        .dark .border-purple-200 {
+            border-color: #7c3aed;
+        }
+
+        .dark .hover\\:text-gray-900:hover {
+            color: #f9fafb;
+        }
+
+        .dark .hover\\:text-gray-800:hover {
+            color: #e5e7eb;
+        }
+
+        .dark .hover\\:bg-gray-100:hover {
+            background-color: #374151;
+        }
+
+        .dark .bg-gradient-to-r.from-orange-50.to-yellow-50 {
+            background: linear-gradient(to right, #1f2937, #111827);
+            border: 1px solid #374151;
+        }
+
+        .dark .bg-gradient-to-r.from-gray-50.to-orange-50 {
+            background: linear-gradient(to right, #1f2937, #111827);
+            border: 1px solid #374151;
+        }
+
+        .dark .bg-gradient-to-r.from-green-50.to-blue-50 {
+            background: linear-gradient(to right, #1f2937, #111827);
+            border: 1px solid #374151;
+        }
+
+        .dark .bg-gradient-to-r.from-blue-50.to-purple-50 {
+            background: linear-gradient(to right, #1f2937, #111827);
+            border: 1px solid #374151;
+        }
+
+        /* Shopping list specific dark styles */
+        .dark .bg-gradient-to-r.from-purple-50.to-pink-50 {
+            background: linear-gradient(to right, #1f2937, #111827);
+            border: 1px solid #374151;
+        }
+
+        .dark .bg-gradient-to-r.from-green-50.to-emerald-50 {
+            background: linear-gradient(to right, #1f2937, #111827);
+            border: 1px solid #374151;
+        }
+
+        /* Plan cards in the shopping list use an indigo/purple gradient */
+        .dark .bg-gradient-to-r.from-indigo-50.to-purple-50 {
+            background: linear-gradient(to right, #1f2937, #111827);
+            border: 1px solid #374151;
+        }
+
+        .dark .border-indigo-200 {
+            border-color: #4c1d95;
+        }
+
+        .dark .border-purple-200 {
+            border-color: #4c1d95;
+        }
+
+        .dark .border-green-200 {
+            border-color: #065f46;
+        }
+
+        .dark .border-orange-200 {
+            border-color: #7c2d12;
+        }
+
+        .dark .border-blue-400 {
+            border-color: #1e3a8a;
+        }
+
+        /* Dark mode hover states */
+        .dark .hover\\:bg-gradient-to-r:hover {
+            background: #374151 !important;
+        }
+
+        .dark .hover\\:from-purple-50:hover,
+        .dark .hover\\:to-pink-50:hover {
+            background: #374151 !important;
+        }
+
+        .dark .hover\\:from-orange-100:hover,
+        .dark .hover\\:to-amber-100:hover {
+            background: #374151 !important;
+        }
+
+        .dark .hover\\:from-purple-100:hover,
+        .dark .hover\\:to-pink-100:hover {
+            background: #374151 !important;
+        }
+
+        .dark a.hover\\:bg-gradient-to-r:hover {
+            background: #374151 !important;
+            color: #e5e7eb !important;
+        }
+
+        /* Fix for navigation pill hover states */
+        .dark a[href="/recipe-hopper/"].hover\\:bg-gradient-to-r:hover {
+            background: #374151 !important;
+        }
+
+        .dark .hover\\:text-orange-700:hover {
+            color: #fb923c !important;
+        }
+
+        .dark .hover\\:text-purple-700:hover {
+            color: #a78bfa !important;
+        }
+
+        /* Nav pill dark mode */
+        .dark .nav-pill {
+            color: #9ca3af;
+        }
+
+        .dark .nav-pill:hover {
+            background: #374151;
+            color: #fb923c;
+        }
+
+        .dark .nav-pill.active {
+            background: linear-gradient(135deg, #ff6b35, #f97316);
+            color: white;
+        }
+
+        /* Button dark mode styles */
+        .dark .bg-gray-200 {
+            background-color: #4b5563;
+        }
+
+        .dark .hover\\:bg-gray-300:hover {
+            background-color: #6b7280;
+        }
+
+        .dark .bg-gray-200.text-gray-700 {
+            color: #e5e7eb;
+        }
+
+        /* Text colors in various contexts */
+        .dark .text-purple-600 {
+            color: #c084fc;
+        }
+
+        .dark .text-red-500 {
+            color: #ef4444;
+        }
+
+        .dark .hover\\:text-red-700:hover {
+            color: #dc2626;
+        }
+
+        .dark .text-green-600 {
+            color: #34d399;
+        }
+
+        .dark .shadow-lg, .dark .shadow-md, .dark .shadow-xl {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Dark mode tag and badge styles */
+        .dark .bg-gradient-to-r.from-yellow-100.to-orange-100 {
+            background: linear-gradient(to right, #374151, #4b5563);
+        }
+
+        .dark .text-orange-700 {
+            color: #fb923c;
+        }
+
+        .dark .text-orange-600 {
+            color: #fb923c;
+        }
+
+        .dark .bg-gradient-to-r.from-purple-100.to-pink-100 {
+            background: linear-gradient(to right, #374151, #4b5563);
+        }
+
+        .dark .text-purple-700 {
+            color: #a78bfa;
+        }
+
+        .dark .bg-gray-100 {
+            background-color: #374151;
+        }
+
+        /* Recipe card specific dark styles */
+        .dark .recipe-card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+        }
+
+        /* Search result keyboard selection */
+        #search-results a.search-selected {
+            background: linear-gradient(to right, #f3e8ff, #fce7f3) !important;
+        }
+
+        /* Search results dark mode */
+        .dark #search-results {
+            background-color: #1f2937;
+            border-color: #7c3aed;
+        }
+
+        .dark #search-results a {
+            color: #e5e7eb;
+        }
+
+        .dark #search-results a:hover,
+        .dark #search-results a.search-selected {
+            background-color: #374151 !important;
+        }
+
+        .dark #search-results .text-gray-800 {
+            color: #e5e7eb;
+        }
+
+        .dark #search-results .text-gray-500 {
+            color: #9ca3af;
+        }
+
+        /* Override inline hover styles in search results */
+        .dark #search-results a.hover\\:bg-gradient-to-r:hover {
+            background: #374151 !important;
+        }
+
+        .dark #search-results .border-gray-100 {
+            border-color: #374151;
+        }
+
+        .dark #search-input {
+            background-color: #374151;
+            border-color: #7c3aed;
+            color: #e5e7eb;
+        }
+
+        .dark #search-input::placeholder {
+            color: #6b7280;
+        }
+
+        .dark #search-input:focus {
+            border-color: #a78bfa;
+        }
+
+        /* Theme toggle button styles */
+        .theme-toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background-color: #9ca3af;
+            border-radius: 12px;
+            padding: 2px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle.dark {
+            background-color: #7c3aed;
+        }
+
+        .theme-toggle-handle {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle.dark .theme-toggle-handle {
+            transform: translateX(26px);
+        }
+
+        @media print {
+            /* Reset color-scheme so browser default text color is dark, not
+               light. Without this, elements without an explicit text color
+               (e.g. ingredient/cookware names) inherit the dark-mode default
+               white text and become invisible on the forced white background. */
+            html, html.dark {
+                color-scheme: light !important;
+            }
+
+            /* Default text color for dark mode when printing */
+            .dark,
+            .dark body {
+                color: #111827 !important;
+            }
+
+            /* Force light mode for printing */
+            .dark body,
+            .dark .bg-gray-50,
+            .dark .bg-white,
+            .dark .bg-gray-100 {
+                background-color: white !important;
+            }
+
+            .dark .text-gray-900, .dark h1, .dark h2, .dark h3 {
+                color: #111827 !important;
+            }
+
+            .dark .text-gray-800 {
+                color: #1f2937 !important;
+            }
+
+            .dark .text-gray-700,
+            .dark .text-gray-600 {
+                color: #374151 !important;
+            }
+
+            .dark .text-orange-600, .dark .text-orange-700 {
+                color: #c2410c !important;
+            }
+
+            .dark .text-green-600 {
+                color: #16a34a !important;
+            }
+
+            .dark .text-purple-600 {
+                color: #9333ea !important;
+            }
+
+            .dark .text-red-500 {
+                color: #ef4444 !important;
+            }
+
+            .dark .border-gray-200, .dark .border-gray-300 {
+                border-color: #e5e7eb !important;
+            }
+
+            .dark .shadow-lg, .dark .shadow-md, .dark .shadow-xl {
+                box-shadow: none !important;
+            }
+
+            .dark .bg-gradient-to-r {
+                background: transparent !important;
+                border-color: #e5e7eb !important;
+            }
+
+            .dark .recipe-card {
+                background-color: white !important;
+                border-color: #e5e7eb !important;
+            }
+
+            /* Dark mode badges must be readable when printed */
+            .dark .ingredient-badge {
+                background: #fef3c7 !important;
+                color: #9a3412 !important;
+                border-color: #fb923c !important;
+            }
+
+            .dark .cookware-badge {
+                background: #dcfce7 !important;
+                color: #14532d !important;
+                border-color: #4ade80 !important;
+            }
+
+            .dark .timer-badge {
+                background: #fee2e2 !important;
+                color: #7f1d1d !important;
+                border-color: #f87171 !important;
+            }
+
+            .dark .step-number {
+                background: #f97316 !important;
+                color: white !important;
+            }
+
+            .dark .tag {
+                background: linear-gradient(135deg, #fbbf24, #fb923c) !important;
+                color: white !important;
+            }
+
+            .dark .metadata-pill {
+                background: white !important;
+                color: #374151 !important;
+            }
+
+            /* Global print styles */
+            * {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            body {
+                background: white !important;
+                margin: 0;
+                padding: 0;
+            }
+
+            .viewport {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* Hide navigation and non-essential elements */
+            nav, #search-container, #search-input, #search-results, .print\\:hidden, .breadcrumb {
+                display: none !important;
+            }
+
+            /* Hide entire navigation bar and its contents */
+            .bg-white.shadow-lg.rounded-2xl.mb-8 {
+                display: none !important;
+            }
+
+            /* Hide all navigation links */
+            a[href="/recipe-hopper/"] {
+                display: none !important;
+            }
+
+            /* Recipe layout for print */
+            .grid {
+                display: block !important;
+            }
+
+            /* Remove shadows and borders for cleaner print */
+            .shadow-lg, .shadow-md, .shadow-xl {
+                box-shadow: none !important;
+            }
+
+            .rounded-2xl, .rounded-xl, .rounded-lg {
+                border-radius: 0 !important;
+            }
+
+            /* Optimize colors for print */
+            .bg-gradient-to-r {
+                background: transparent !important;
+            }
+
+            .text-orange-600, .text-orange-700 {
+                color: #000 !important;
+                font-weight: bold;
+            }
+
+            .text-green-600 {
+                color: #000 !important;
+            }
+
+            /* Page breaks */
+            .md\\:col-span-1, .md\\:col-span-2 {
+                page-break-inside: avoid;
+                width: 100% !important;
+            }
+
+            /* Ingredient and step styling */
+            .bg-gradient-to-r.from-orange-50,
+            .bg-gradient-to-r.from-green-50,
+            .bg-gradient-to-r.from-gray-50,
+            .bg-gradient-to-r.from-blue-50,
+            .dark .bg-gradient-to-r.from-orange-50,
+            .dark .bg-gradient-to-r.from-green-50,
+            .dark .bg-gradient-to-r.from-gray-50,
+            .dark .bg-gradient-to-r.from-blue-50 {
+                background: #f9f9f9 !important;
+                border: 1px solid #ddd !important;
+            }
+
+            /* Step numbers */
+            .step-number {
+                background: #000 !important;
+                color: #fff !important;
+            }
+
+            /* Images */
+            img {
+                max-height: 300px !important;
+                max-width: 100% !important;
+                height: auto !important;
+                object-fit: contain !important;
+                page-break-inside: avoid;
+                page-break-after: avoid;
+            }
+
+            /* Recipe sections on same page if possible */
+            h2, h3 {
+                page-break-after: avoid;
+            }
+
+            ol, ul {
+                page-break-inside: avoid;
+            }
+
+            /* Compact spacing */
+            .mb-8, .mb-6, .mb-4 {
+                margin-bottom: 0.5rem !important;
+            }
+
+            .p-6 {
+                padding: 0.5rem !important;
+            }
+
+            /* Recipe header */
+            h1 {
+                color: #000 !important;
+                font-size: 1.5rem !important;
+                margin-bottom: 0 !important;
+            }
+
+            /* Print-specific flexbox utilities */
+            .print\\:flex-row {
+                flex-direction: row !important;
+            }
+
+            .print\\:items-center {
+                align-items: center !important;
+            }
+
+            .print\\:block {
+                display: block !important;
+            }
+
+            .print\\:text-2xl {
+                font-size: 1.5rem !important;
+            }
+
+            /* Ensure ingredients and instructions stay together */
+            .bg-white {
+                background: white !important;
+                border: none !important;
+            }
+
+            /* Remove truncation in print so text is fully visible */
+            .truncate {
+                overflow: visible !important;
+                text-overflow: unset !important;
+                white-space: normal !important;
+                max-width: none !important;
+                display: inline !important;
+            }
+
+            /* Shopping list print styles */
+            .lg\:w-2\/5, .xl\:w-1\/3 {
+                display: none !important;
+            }
+
+            /* Only apply flex override to top-level shopping list layout */
+            #shopping-list-results ~ .flex-1,
+            .flex.min-h-screen > .flex-1 {
+                width: 100% !important;
+                flex: none !important;
+            }
+
+            #shopping-list-results {
+                font-size: 11pt !important;
+                line-height: 1.2 !important;
+            }
+
+            #shopping-list-results input[type="checkbox"] {
+                display: none !important;
+            }
+
+            #shopping-list-results li .flex-1 {
+                width: auto !important;
+                flex: 1 1 0% !important;
+            }
+
+            #shopping-list-results label {
+                cursor: default !important;
+            }
+
+            #shopping-list-results h2 {
+                font-size: 14pt !important;
+                margin-bottom: 0.1rem !important;
+            }
+
+            #shopping-list-results h3 {
+                font-size: 11pt !important;
+                margin-bottom: 0 !important;
+            }
+
+            #shopping-list-results .space-y-2,
+            #shopping-list-results ul {
+                gap: 0 !important;
+                --tw-space-y-reverse: 0 !important;
+            }
+
+            #shopping-list-results .space-y-2 > * + *,
+            #shopping-list-results ul > * + * {
+                margin-top: 0 !important;
+            }
+
+            #shopping-list-results li {
+                padding: 0 !important;
+                line-height: 1.3 !important;
+                border-bottom: 1px dotted #ccc;
+            }
+
+            #shopping-list-results .mb-6 {
+                margin-bottom: 0.15rem !important;
+            }
+
+            #shopping-list-results .mb-4,
+            #shopping-list-results .mb-3 {
+                margin-bottom: 0 !important;
+            }
+
+            #shopping-list-results .p-4,
+            #shopping-list-results .p-3,
+            #shopping-list-results .px-3 {
+                padding: 0 !important;
+            }
+
+            #shopping-list-results .gap-6 {
+                gap: 0 !important;
+            }
+
+            #shopping-list-results .rounded-lg {
+                border: none !important;
+            }
+
+            /* Menu print styles */
+            #menu-content {
+                font-size: 10pt !important;
+                line-height: 1.4 !important;
+            }
+
+            #menu-content h1 {
+                font-size: 14pt !important;
+                margin-bottom: 0.25rem !important;
+                color: #000 !important;
+                -webkit-text-fill-color: #000 !important;
+            }
+
+            #menu-content .space-y-6 > * + * {
+                margin-top: 0.3rem !important;
+            }
+
+            #menu-content .menu-section {
+                border: 1px solid #ccc !important;
+                border-radius: 0 !important;
+                page-break-inside: avoid;
+            }
+
+            #menu-content .menu-section-header {
+                background: #eee !important;
+                color: #000 !important;
+                padding: 0.15rem 0.5rem !important;
+            }
+
+            #menu-content .menu-section-header h2 {
+                font-size: 11pt !important;
+                color: #000 !important;
+            }
+
+            #menu-content .menu-section-body {
+                padding: 0.25rem 0.5rem !important;
+            }
+
+            #menu-content .menu-section-body .space-y-2 > * + *,
+            #menu-content .menu-section-body > * + * {
+                margin-top: 0.05rem !important;
+            }
+
+            #menu-content .menu-section-body h3 {
+                font-size: 10pt !important;
+                margin-top: 0.2rem !important;
+                margin-bottom: 0 !important;
+            }
+
+            #menu-content .menu-section-body .pl-6 {
+                padding-left: 1rem !important;
+            }
+
+            /* Preserve word spacing in flex lines */
+            #menu-content .menu-section-body .flex {
+                gap: 0.25em !important;
+            }
+
+            #menu-content .ingredient-badge {
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+                font-weight: bold !important;
+                color: #000 !important;
+            }
+
+            #menu-content a {
+                color: #000 !important;
+                text-decoration: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="viewport">
+        
+<header class="site-header print:hidden">
+  <a class="site-brand" href="/recipe-hopper/">
+    <span class="site-mark" aria-hidden="true">RH</span>
+    <span><strong>Recipe Hopper</strong><small>Eight weeks of Sunday cooking</small></span>
+  </a>
+  <div class="site-search" id="search-container">
+    <label class="sr-only" for="search-input">Search recipes</label>
+    <input id="search-input" type="search" placeholder="Search dishes or ingredients">
+    <div id="search-results" class="hidden"></div>
+  </div>
+  <a class="site-plan-link" href="/recipe-hopper/planner.html">Weekly plan</a>
+</header>
+
+
+        <main>
+            
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Recipe","author":{"@type":"Person","name":"GitHub · josephrmartinez/recipe-dataset"},"keywords":"approachable","name":"Quick Sesame Chicken With Broccoli","recipeIngredient":["3.75 tsp Sriracha","40 oz boneless skinless chicken thighs, breasts, or a mix, patted dry, cut into 1\" chunks","10 c broccoli florets","1.25 tsp finely grated ginger","5/8 tsp freshly ground black pepper","2.25 tsp kosher salt, divided, plus more","1.25 large clove garlic, finely grated","6 tbsp low-sodium soy sauce","6 tbsp plus 1 tablespoon honey","6 tbsp plus 2 tablespoons cornstarch","1.875 c quick-cooking white rice","3.75 tbsp rice wine vinegar","2.5 scallions, thinly sliced","1.875 tsp toasted sesame oil","2.5 tbsp toasted sesame seeds, divided","5 tbsp vegetable oil, divided"],"recipeInstructions":[{"@type":"HowToStep","text":"quick-cooking white rice kosher salt, divided, plus more broccoli florets plus 2 tablespoons cornstarch freshly ground black pepper boneless skinless chicken thighs, breasts, or a mix, patted dry, cut into 1\" chunks vegetable oil, divided plus 1 tablespoon honey low-sodium soy sauce rice wine vinegar Sriracha large clove garlic, finely grated finely grated ginger toasted sesame oil toasted sesame seeds, divided scallions, thinly sliced"},{"@type":"HowToStep","text":"Cook rice with a pinch of salt according to package directions."},{"@type":"HowToStep","text":"Set a steamer basket in a medium pot filled with 1\" water, cover pot, and bring water to a boil. Steam broccoli, covered, until crisp-tender, 5–6 minutes. Drain and set aside."},{"@type":"HowToStep","text":"Whisk cornstarch, pepper, and 1 1/2 tsp. salt in a large bowl. Add chicken and toss to coat."},{"@type":"HowToStep","text":"Heat 2 Tbsp. vegetable oil in a large skillet over high. Add half of the chicken and cook, turning occasionally, until chicken is cooked through and a light brown crust forms, about 5 minutes."},{"@type":"HowToStep","text":"Meanwhile, whisk together honey, soy sauce, vinegar, Sriracha, garlic, ginger, sesame oil, 1 Tbsp. sesame seeds, and remaining 1/4 tsp. salt in a medium bowl."},{"@type":"HowToStep","text":"Transfer first batch of chicken to a plate. Heat remaining 2 Tbsp. vegetable oil and cook remaining chicken. Add sauce to skillet along with first batch of chicken. Toss well and cook until sauce is reduced and thickened, about 2 minutes. Fold in reserved broccoli, toss to coat, and remove from heat."},{"@type":"HowToStep","text":"Divide chicken and broccoli among 4 plates and top with scallions and remaining 1 Tbsp. sesame seeds. Serve with rice on the side."}]}</script>
+
+<div>
+    <nav class="mb-4 breadcrumb print:hidden">
+        <ol class="flex items-center space-x-2 text-sm text-gray-600">
+            <li><a href="/recipe-hopper/index.html" class="hover:text-gray-900">Recipes</a></li>
+            
+            <li class="flex items-center">
+                <span class="mx-2 text-gray-400">/</span>
+                
+                    <span class="text-gray-900">quick-sesame-chicken-with-broccoli</span>
+                
+            </li>
+            
+        </ol>
+    </nav>
+
+    <div class="mb-8">
+        <!-- Recipe image if available -->
+        
+        
+
+        <!-- Title bar with scale and shopping list button -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 print:flex-row print:items-center">
+            <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent print:text-2xl">
+                Quick Sesame Chicken With Broccoli
+            </h1>
+            
+            <div class="flex flex-wrap items-center gap-2 lg:gap-3 print:hidden">
+                
+                <button id="start-cooking-btn"
+                        onclick="startCookingMode()"
+                        class="px-3 lg:px-4 py-2 text-sm lg:text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-md flex items-center gap-1.5 lg:gap-2 whitespace-nowrap print:hidden"
+                        title="Start Cooking">
+                    <svg class="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="hidden lg:inline">Cook</span>
+                </button>
+                
+                
+                
+            </div>
+        </div>
+
+        <!-- Recipe info section -->
+        <div class="space-y-4">
+            <!-- Tags row -->
+            
+            <div class="flex flex-wrap gap-2">
+                
+                <span class="tag">Approachable</span>
+                
+            </div>
+            
+
+            
+
+            <!-- Description if present -->
+            
+            
+
+            <!-- Metadata row -->
+            <div id="metadata-container" class="flex flex-wrap gap-3">
+                <!-- Display all metadata items -->
+
+                
+                
+
+                
+                
+
+                
+                
+
+                
+                
+
+                
+                
+
+                
+                
+
+                
+                
+
+                
+                
+
+                
+                <span class="metadata-pill metadata-author">GitHub · josephrmartinez/recipe-dataset</span>
+                
+
+                
+                <a class="metadata-pill metadata-source" href="https://github.com/josephrmartinez/recipe-dataset">Original recipe</a>
+                
+
+                
+                
+
+                <!-- Custom metadata -->
+                
+                <span class="metadata-pill metadata-custom">site: GitHub · josephrmartinez/recipe-dataset</span>
+                
+                <span class="metadata-pill metadata-custom">license: CC BY-SA 3.0 (per dataset README)</span>
+                
+            </div>
+
+            
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8 mb-8">
+        <div class="md:col-span-1">
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4 text-orange-600">Ingredients</h2>
+
+                
+                    <!-- Display ingredients grouped by section -->
+                    
+                        
+                    
+                        
+                            
+                                <h3 class="text-lg font-semibold mt-4 mb-2 text-orange-700">Ingredients</h3>
+                            
+
+                            <ul class="space-y-3 mb-4">
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">Sriracha</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    3.75 tsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">boneless skinless chicken thighs, breasts, or a mix, patted dry, cut into 1&quot; chunks</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    40 oz
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">broccoli florets</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    10 c
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">finely grated ginger</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    1.25 tsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">freshly ground black pepper</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    5/8 tsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">kosher salt, divided, plus more</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    2.25 tsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">large clove garlic, finely grated</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    1.25
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">low-sodium soy sauce</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    6 tbsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">plus 1 tablespoon honey</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    6 tbsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">plus 2 tablespoons cornstarch</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    6 tbsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">quick-cooking white rice</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    1.875 c
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">rice wine vinegar</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    3.75 tbsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">scallions, thinly sliced</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    2.5
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">toasted sesame oil</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    1.875 tsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">toasted sesame seeds, divided</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    2.5 tbsp
+                                    
+                                </span>
+                            </li>
+                            
+                            <li class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg px-3 py-2">
+                                <div class="flex-1 flex items-center">
+                                    
+                                        <span class="font-medium">vegetable oil, divided</span>
+                                    
+                                    
+                                    
+                                </div>
+                                <span class="text-orange-700 font-semibold ml-2">
+                                    5 tbsp
+                                    
+                                </span>
+                            </li>
+                            
+                            </ul>
+                        
+                    
+                        
+                    
+                
+
+            
+            </div>
+        </div>
+
+        <div class="md:col-span-2">
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                
+                    
+                    
+
+                    <ol class="space-y-4 ">
+                        
+                            
+                                <li class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 mb-3 border-l-4 border-blue-400">
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-blue-600">📝</span>
+                                        <p class="text-gray-700 italic" style="white-space: pre-line">Servings: 5</p>
+                                    </div>
+                                </li>
+                            
+                        
+                    </ol>
+                
+                    
+                        <h3 class="text-xl font-semibold mt-6 mb-4 text-orange-700 border-b-2 border-orange-200 pb-2">Ingredients</h3>
+                    
+
+                    <ol class="space-y-4 mt-4">
+                        
+                            
+                                <li class="bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl p-4">
+                                    <div class="flex flex-col gap-4">
+                                        
+                                        
+                                        <div class="flex gap-4">
+                                            <div class="step-number">1</div>
+                                            <div class="flex-1">
+                                                <div class="text-gray-700 mb-2 leading-8">
+                                                
+                                                    <span class="ingredient-badge">quick-cooking white rice</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">kosher salt, divided, plus more</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">broccoli florets</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">plus 2 tablespoons cornstarch</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">freshly ground black pepper</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">boneless skinless chicken thighs, breasts, or a mix, patted dry, cut into 1&quot; chunks</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">vegetable oil, divided</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">plus 1 tablespoon honey</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">low-sodium soy sauce</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">rice wine vinegar</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">Sriracha</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">large clove garlic, finely grated</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">finely grated ginger</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">toasted sesame oil</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">toasted sesame seeds, divided</span>
+                                                    
+ 
+                                                    <span class="ingredient-badge">scallions, thinly sliced</span>
+                                                </div>
+                                                
+                                                <div class="text-sm text-gray-600 mt-2 pl-4 border-l-2 border-orange-300">
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            quick-cooking white rice: 1.875 c,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            kosher salt, divided, plus more: 2.25 tsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            broccoli florets: 10 c,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            plus 2 tablespoons cornstarch: 6 tbsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            freshly ground black pepper: 5/8 tsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            boneless skinless chicken thighs, breasts, or a mix, patted dry, cut into 1&quot; chunks: 40 oz,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            vegetable oil, divided: 5 tbsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            plus 1 tablespoon honey: 6 tbsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            low-sodium soy sauce: 6 tbsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            rice wine vinegar: 3.75 tbsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            Sriracha: 3.75 tsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            large clove garlic, finely grated: 1.25,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            finely grated ginger: 1.25 tsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            toasted sesame oil: 1.875 tsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            toasted sesame seeds, divided: 2.5 tbsp,
+                                                        </span>
+                                                    
+                                                        <span class="inline-block mr-3">
+                                                            scallions, thinly sliced: 2.5
+                                                        </span>
+                                                    
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                        
+                    </ol>
+                
+                    
+                        <h3 class="text-xl font-semibold mt-6 mb-4 text-orange-700 border-b-2 border-orange-200 pb-2">Directions</h3>
+                    
+
+                    <ol class="space-y-4 mt-4">
+                        
+                            
+                                <li class="bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl p-4">
+                                    <div class="flex flex-col gap-4">
+                                        
+                                        
+                                        <div class="flex gap-4">
+                                            <div class="step-number">1</div>
+                                            <div class="flex-1">
+                                                <div class="text-gray-700 mb-2 leading-8">
+                                                
+                                                    Cook rice with a pinch of salt according to package directions.
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                        
+                            
+                                <li class="bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl p-4">
+                                    <div class="flex flex-col gap-4">
+                                        
+                                        
+                                        <div class="flex gap-4">
+                                            <div class="step-number">2</div>
+                                            <div class="flex-1">
+                                                <div class="text-gray-700 mb-2 leading-8">
+                                                
+                                                    Set a steamer basket in a medium pot filled with 1&quot; water, cover pot, and bring water to a boil. Steam broccoli, covered, until crisp-tender, 5–6 minutes. Drain and set aside.
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                        
+                            
+                                <li class="bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl p-4">
+                                    <div class="flex flex-col gap-4">
+                                        
+                                        
+                                        <div class="flex gap-4">
+                                            <div class="step-number">3</div>
+                                            <div class="flex-1">
+                                                <div class="text-gray-700 mb-2 leading-8">
+                                                
+                                                    Whisk cornstarch, pepper, and 1 1/2 tsp. salt in a large bowl. Add chicken and toss to coat.
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                        
+                            
+                                <li class="bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl p-4">
+                                    <div class="flex flex-col gap-4">
+                                        
+                                        
+                                        <div class="flex gap-4">
+                                            <div class="step-number">4</div>
+                                            <div class="flex-1">
+                                                <div class="text-gray-700 mb-2 leading-8">
+                                                
+                                                    Heat 2 Tbsp. vegetable oil in a large skillet over high. Add half of the chicken and cook, turning occasionally, until chicken is cooked through and a light brown crust forms, about 5 minutes.
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                        
+                            
+                                <li class="bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl p-4">
+                                    <div class="flex flex-col gap-4">
+                                        
+                                        
+                                        <div class="flex gap-4">
+                                            <div class="step-number">5</div>
+                                            <div class="flex-1">
+                                                <div class="text-gray-700 mb-2 leading-8">
+                                                
+                                                    Meanwhile, whisk together honey, soy sauce, vinegar, Sriracha, garlic, ginger, sesame oil, 1 Tbsp. sesame seeds, and remaining 1/4 tsp. salt in a medium bowl.
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                        
+                            
+                                <li class="bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl p-4">
+                                    <div class="flex flex-col gap-4">
+                                        
+                                        
+                                        <div class="flex gap-4">
+                                            <div class="step-number">6</div>
+                                            <div class="flex-1">
+                                                <div class="text-gray-700 mb-2 leading-8">
+                                                
+                                                    Transfer first batch of chicken to a plate. Heat remaining 2 Tbsp. vegetable oil and cook remaining chicken. Add sauce to skillet along with first batch of chicken. Toss well and cook until sauce is reduced and thickened, about 2 minutes. Fold in reserved broccoli, toss to coat, and remove from heat.
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                        
+                            
+                                <li class="bg-gradient-to-r from-gray-50 to-orange-50 rounded-xl p-4">
+                                    <div class="flex flex-col gap-4">
+                                        
+                                        
+                                        <div class="flex gap-4">
+                                            <div class="step-number">7</div>
+                                            <div class="flex-1">
+                                                <div class="text-gray-700 mb-2 leading-8">
+                                                
+                                                    Divide chicken and broccoli among 4 plates and top with scallions and remaining 1 Tbsp. sesame seeds. Serve with rice on the side.
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                        
+                    </ol>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="cooking-mode-data" type="application/json">
+{"image":null,"name":"Quick Sesame Chicken With Broccoli","scale":1.0,"sections":[{"ingredients":[],"name":null,"stepOffset":0,"steps":[]},{"ingredients":[{"name":"Sriracha","note":null,"quantity":"3.75","unit":"tsp"},{"name":"boneless skinless chicken thighs, breasts, or a mix, patted dry, cut into 1\" chunks","note":null,"quantity":"40","unit":"oz"},{"name":"broccoli florets","note":null,"quantity":"10","unit":"c"},{"name":"finely grated ginger","note":null,"quantity":"1.25","unit":"tsp"},{"name":"freshly ground black pepper","note":null,"quantity":"5/8","unit":"tsp"},{"name":"kosher salt, divided, plus more","note":null,"quantity":"2.25","unit":"tsp"},{"name":"large clove garlic, finely grated","note":null,"quantity":"1.25","unit":null},{"name":"low-sodium soy sauce","note":null,"quantity":"6","unit":"tbsp"},{"name":"plus 1 tablespoon honey","note":null,"quantity":"6","unit":"tbsp"},{"name":"plus 2 tablespoons cornstarch","note":null,"quantity":"6","unit":"tbsp"},{"name":"quick-cooking white rice","note":null,"quantity":"1.875","unit":"c"},{"name":"rice wine vinegar","note":null,"quantity":"3.75","unit":"tbsp"},{"name":"scallions, thinly sliced","note":null,"quantity":"2.5","unit":null},{"name":"toasted sesame oil","note":null,"quantity":"1.875","unit":"tsp"},{"name":"toasted sesame seeds, divided","note":null,"quantity":"2.5","unit":"tbsp"},{"name":"vegetable oil, divided","note":null,"quantity":"5","unit":"tbsp"}],"name":"Ingredients","stepOffset":0,"steps":[{"globalNumber":1,"image":null,"ingredients":[{"name":"quick-cooking white rice","note":null,"quantity":"1.875","unit":"c"},{"name":"kosher salt, divided, plus more","note":null,"quantity":"2.25","unit":"tsp"},{"name":"broccoli florets","note":null,"quantity":"10","unit":"c"},{"name":"plus 2 tablespoons cornstarch","note":null,"quantity":"6","unit":"tbsp"},{"name":"freshly ground black pepper","note":null,"quantity":"5/8","unit":"tsp"},{"name":"boneless skinless chicken thighs, breasts, or a mix, patted dry, cut into 1\" chunks","note":null,"quantity":"40","unit":"oz"},{"name":"vegetable oil, divided","note":null,"quantity":"5","unit":"tbsp"},{"name":"plus 1 tablespoon honey","note":null,"quantity":"6","unit":"tbsp"},{"name":"low-sodium soy sauce","note":null,"quantity":"6","unit":"tbsp"},{"name":"rice wine vinegar","note":null,"quantity":"3.75","unit":"tbsp"},{"name":"Sriracha","note":null,"quantity":"3.75","unit":"tsp"},{"name":"large clove garlic, finely grated","note":null,"quantity":"1.25","unit":null},{"name":"finely grated ginger","note":null,"quantity":"1.25","unit":"tsp"},{"name":"toasted sesame oil","note":null,"quantity":"1.875","unit":"tsp"},{"name":"toasted sesame seeds, divided","note":null,"quantity":"2.5","unit":"tbsp"},{"name":"scallions, thinly sliced","note":null,"quantity":"2.5","unit":null}],"number":1,"type":"step"}]},{"ingredients":[],"name":"Directions","stepOffset":1,"steps":[{"globalNumber":2,"image":null,"ingredients":[],"number":1,"type":"step"},{"globalNumber":3,"image":null,"ingredients":[],"number":2,"type":"step"},{"globalNumber":4,"image":null,"ingredients":[],"number":3,"type":"step"},{"globalNumber":5,"image":null,"ingredients":[],"number":4,"type":"step"},{"globalNumber":6,"image":null,"ingredients":[],"number":5,"type":"step"},{"globalNumber":7,"image":null,"ingredients":[],"number":6,"type":"step"},{"globalNumber":8,"image":null,"ingredients":[],"number":7,"type":"step"}]}]}
+</script>
+
+
+
+        </main>
+
+        
+        <footer class="mt-12 mb-6 text-center text-sm text-gray-500 print:hidden">
+            Built with
+            <a href="https://cooklang.org/cli/" class="text-orange-600 hover:text-orange-700 hover:underline" target="_blank" rel="noopener">CookCLI</a>
+        </footer>
+        
+    </div>
+
+    <script>
+        // Theme toggle function
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', newTheme);
+        }
+    </script>
+
+    
+    <script>window.__PREFIX__ = "/recipe-hopper";</script>
+    <script src="/recipe-hopper/static/js/search.js"></script>
+    
+
+    <!-- URL prefix for JavaScript -->
+    <script>
+        window.__PREFIX__ = "/recipe-hopper";
+        window.__STATIC_MODE__ = true;
+    </script>
+
+    <!-- Keyboard shortcuts -->
+    <script src="/recipe-hopper/static/js/keyboard-shortcuts.js"></script>
+    <!-- Expose showShortcutsHelp globally for the help button -->
+    <script>
+        // showShortcutsHelp is defined in keyboard-shortcuts.js
+        // This ensures it's available for the onclick handler
+        if (typeof showShortcutsHelp === 'undefined') {
+            window.showShortcutsHelp = function() {
+                console.warn('Keyboard shortcuts not loaded');
+            };
+        }
+    </script>
+
+    
+<link rel="stylesheet" href="/recipe-hopper/static/css/cooking-mode.css">
+<script src="/recipe-hopper/static/js/cooking-mode.js"></script>
+
+</body>
+</html>
