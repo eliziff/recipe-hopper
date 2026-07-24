@@ -90,7 +90,7 @@ CURRICULUM = {
     "Foolproof Pan Pizza": "dough-fermentation",
     "Chicken Pot Pie": "roux-making",
     "World's Best Lasagna": "layering-and-baking",
-    "The Best Crispy Roast Potatoes Ever": "parboiling-and-roasting",
+    "Chicken Parmesan": "breading-and-shallow-frying",
     "Speedy lentil coconut curry": "blooming-spices",
     "Sweet and Spicy Glazed Chicken Thighs": "pan-searing-and-glazing",
     "Spiced chicken kebabs with chopped salad & flatbreads": "marinating-and-grilling",
@@ -247,6 +247,17 @@ def budget_score(data: dict) -> int:
     return sum(word in text for word in costly) * 4 - sum(word in text for word in staples)
 
 
+def is_meal(data: dict) -> bool:
+    """Reject components and non-meals before they reach the weekly hopper."""
+    title = clean(data.get("name")).lower()
+    blocked = (
+        "sauce", "dressing", "dip", "hard-boiled egg", "roast potatoes",
+        "cookie", "cake", "pancake", "custard", "crumb bar", "apple crisp",
+        "banana bread", "pico de gallo", "salsa",
+    )
+    return not any(word in title for word in blocked)
+
+
 def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
     title = clean(data.get("name") or data.get("headline"))
     ingredients = [clean(item) for item in data.get("recipeIngredient", []) if clean(item)]
@@ -326,6 +337,8 @@ def main() -> int:
         for url in pool:
             try:
                 data = parse_recipe(fetch(url, args.refresh))
+                if not is_meal(data):
+                    raise ValueError("not a complete lunch or dinner dish")
                 parsed.append((budget_score(data), url, data))
             except Exception as error:
                 print(f"{source_name}: skipped {url}: {error}")

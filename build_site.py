@@ -2,6 +2,7 @@
 """Build CookCLI output and apply Recipe Hopper's static-site additions."""
 
 import argparse
+import html
 import os
 import re
 import shutil
@@ -39,4 +40,19 @@ for page in SITE.rglob("*.html"):
         text,
         flags=re.S,
     )
+    text = re.sub(
+        r'<span class="metadata-pill metadata-source">.*?(https?://[^<]+)</span>',
+        lambda match: (
+            f'<a class="metadata-pill metadata-source" href="{html.escape(match.group(1))}">'
+            "Original recipe</a>"
+        ),
+        text,
+    )
+    text = re.sub(
+        r">skill-([a-z-]+)</span>",
+        lambda match: f">{match.group(1).replace('-', ' ').title()}</span>",
+        text,
+    )
+    text = text.replace(">approachable</span>", ">Approachable</span>")
+    text = text.replace(">stretch</span>", ">Stretch</span>")
     page.write_text(text.replace("</body>", link + "\n</body>"), encoding="utf-8")
