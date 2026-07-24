@@ -2,8 +2,10 @@
 """Build CookCLI output and apply Recipe Hopper's static-site additions."""
 
 import argparse
+import os
 import re
 import shutil
+import stat
 import subprocess
 from pathlib import Path
 
@@ -15,7 +17,9 @@ parser.add_argument("--cook", default="cook")
 args = parser.parse_args()
 
 if SITE.exists():
-    shutil.rmtree(SITE)
+    shutil.rmtree(SITE, onerror=lambda function, path, _: (
+        os.chmod(path, stat.S_IWRITE), function(path)
+    ))
 subprocess.run([
     args.cook, "build", "web", "--base-path", str(ROOT / "recipes"),
     "--base-url", "/recipe-hopper/",

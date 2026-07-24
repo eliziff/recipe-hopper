@@ -77,6 +77,26 @@ SOURCES = {
     },
 }
 
+GITHUB_COOKS = [
+    {
+        "title": "Kluski",
+        "url": "https://github.com/justintout/recipes/blob/main/Food/Kluski.cook",
+        "raw": "https://raw.githubusercontent.com/justintout/recipes/main/Food/Kluski.cook",
+        "author": "Mary Gdovka",
+    },
+]
+
+CURRICULUM = {
+    "Foolproof Pan Pizza": "dough-fermentation",
+    "Chicken Pot Pie": "roux-making",
+    "World's Best Lasagna": "layering-and-baking",
+    "The Best Crispy Roast Potatoes Ever": "parboiling-and-roasting",
+    "Speedy lentil coconut curry": "blooming-spices",
+    "Sweet and Spicy Glazed Chicken Thighs": "pan-searing-and-glazing",
+    "Spiced chicken kebabs with chopped salad & flatbreads": "marinating-and-grilling",
+    "Kluski": "dumpling-shaping",
+}
+
 UNITS = (
     "tablespoons?|tbsp|teaspoons?|tsp|cups?|ounces?|oz|pounds?|lbs?|grams?|g|"
     "kilograms?|kg|milliliters?|ml|liters?|l|cloves?|cans?|packages?|pinch(?:es)?|"
@@ -195,6 +215,9 @@ def yaml(value) -> str:
 
 def learning_tags(data: dict) -> list[str]:
     """Choose one useful technique and a practical difficulty band."""
+    title = clean(data.get("name"))
+    if title in CURRICULUM:
+        return ["stretch", f"skill-{CURRICULUM[title]}"]
     steps = flatten_steps(data.get("recipeInstructions"))
     ingredients = [clean(item) for item in data.get("recipeIngredient", [])]
     text = " ".join([clean(data.get("name")), *ingredients, *steps]).lower()
@@ -211,7 +234,7 @@ def learning_tags(data: dict) -> list[str]:
     technique = next((name for name, words in techniques if any(word in text for word in words)), "timing-and-seasoning")
     demanding = ("knead", "proof", "deglaze", "emuls", "deep-fry", "stuff", "roll out")
     score = len(steps) + len(ingredients) // 4 + sum(word in text for word in demanding) * 3
-    return ["stretch" if score >= 11 else "approachable", f"skill-{technique}"]
+    return ["approachable", f"skill-{technique}"]
 
 
 def budget_score(data: dict) -> int:
@@ -323,6 +346,27 @@ def main() -> int:
                 print(f"{source_name}: skipped {url}: {error}")
         if source_written < args.per_source:
             print(f"{source_name}: only {source_written}/{args.per_source} recipes converted")
+    for item in GITHUB_COOKS:
+        try:
+            data = {"name": item["title"]}
+            metadata = "\n".join([
+                "---",
+                f"title: {yaml(item['title'])}",
+                f"source: {yaml(item['url'])}",
+                f"author: {yaml(item['author'])}",
+                'site: "GitHub · justintout/recipes"',
+                f"tags: {json.dumps(learning_tags(data))}",
+                "---",
+                "",
+            ])
+            (output / f"{slug(item['title'])}.cook").write_text(
+                metadata + fetch(item["raw"], args.refresh).strip() + "\n",
+                encoding="utf-8",
+            )
+            print(f"GitHub · justintout/recipes: {item['title']}")
+            written += 1
+        except Exception as error:
+            print(f"GitHub recipe skipped: {error}")
     if not written:
         raise SystemExit("No recipes converted")
     return 0

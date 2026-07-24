@@ -11,7 +11,7 @@
   <main class="planner-shell">
     <header class="planner-header">
       <a href="/recipe-hopper/">← Recipes</a>
-      <p class="eyebrow">One shop. Two cooks. One week.</p>
+      <p class="eyebrow" id="cycle">One shop. Two cooks. One week.</p>
       <h1>Weekly meal plan</h1>
       <p>Breakfast is excluded. Sunday is always grocery and prep day. Each week pairs a comfortable cook with one new skill.</p>
     </header>
@@ -51,6 +51,7 @@
     sunday.setDate(sunday.getDate() - sunday.getDay());
     const weekKey = sunday.toLocaleDateString("en-CA");
     const weekNumber = Math.floor(sunday.getTime() / 604800000);
+    const cycleWeek = weekNumber % 8 + 1;
     const state = JSON.parse(localStorage.getItem("recipe-hopper-plan") || "{}");
     let recipes = [];
 
@@ -116,6 +117,7 @@
     const batchNote = document.getElementById("batch-note");
     const skill = document.getElementById("skill");
     const skillNote = document.getElementById("skill-note");
+    document.getElementById("cycle").textContent = `Week ${cycleWeek} of 8 · one shop · two cooks`;
 
     fetch(root + "static/search-index.json").then(response => response.json()).then(data => {
       recipes = data;
