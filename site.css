@@ -1,0 +1,260 @@
+/* Recipe Hopper's restrained layer over CookCLI's generated theme. */
+:root {
+    --hopper-ink: #263229;
+    --hopper-green: #496b50;
+    --hopper-paper: #f5f2ea;
+    --hopper-line: #d9d4c8;
+}
+
+body.bg-gray-50 {
+    background: var(--hopper-paper);
+    color: var(--hopper-ink);
+}
+
+.viewport {
+    max-width: 1280px;
+    padding: 1.25rem;
+}
+
+nav.bg-white,
+.recipe-card,
+main > div {
+    border-color: var(--hopper-line);
+}
+
+nav.bg-white {
+    border: 1px solid var(--hopper-line);
+    box-shadow: 0 8px 28px rgb(38 50 41 / 8%);
+}
+
+h1.bg-gradient-to-r {
+    background: none;
+    color: var(--hopper-ink);
+    -webkit-text-fill-color: currentColor;
+}
+
+.recipe-card {
+    border: 1px solid var(--hopper-line);
+    box-shadow: 0 4px 18px rgb(38 50 41 / 7%);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.recipe-card::before {
+    background: var(--hopper-green);
+}
+
+.recipe-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgb(38 50 41 / 12%);
+}
+
+.ingredient-badge {
+    white-space: normal;
+    line-height: 1.45;
+    background: #f1ead7;
+    border-color: #d8c99f;
+}
+
+.step-number {
+    background: var(--hopper-green);
+}
+
+main img.rounded-xl {
+    width: 100%;
+    max-width: 920px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+
+.recipe-step {
+    max-width: 78ch;
+    line-height: 1.7;
+}
+
+@media (max-width: 640px) {
+    .viewport {
+        padding: 0.75rem;
+    }
+
+    nav.bg-white {
+        margin-bottom: 1rem;
+    }
+
+    main img.rounded-xl {
+        aspect-ratio: 4 / 3;
+    }
+
+    .ingredient-badge {
+        display: inline;
+    }
+}
+
+.planner-fab {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 40;
+    padding: .7rem 1rem;
+    border-radius: 999px;
+    background: var(--hopper-ink);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+}
+
+.planner-shell {
+    width: min(1440px, 100%);
+    margin: auto;
+    padding: 2rem;
+}
+
+.planner-header {
+    max-width: 760px;
+    margin-bottom: 2rem;
+}
+
+.planner-header h1 {
+    margin: .25rem 0;
+    font-size: clamp(2.3rem, 6vw, 4.5rem);
+    line-height: .95;
+    letter-spacing: -.04em;
+}
+
+.eyebrow {
+    margin-top: 1rem;
+    color: var(--hopper-green);
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.planner-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.planner-controls label {
+    font-size: .8rem;
+    font-weight: 800;
+}
+
+.planner-controls select {
+    display: block;
+    width: 100%;
+    margin-top: .4rem;
+    padding: .8rem;
+    border: 1px solid var(--hopper-line);
+    border-radius: .7rem;
+    background: white;
+}
+
+.batch-note {
+    padding: 1rem;
+    border-left: 4px solid var(--hopper-green);
+    background: #edf2eb;
+}
+
+.skill-focus {
+  margin: 1rem 0 1.5rem;
+  padding: 1.25rem 1.4rem;
+  border-left: 5px solid var(--sage);
+  border-radius: 0 1rem 1rem 0;
+  background: #eef4e9;
+}
+
+.skill-focus h2 { margin: .2rem 0; }
+
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(180px, 1fr));
+    gap: .75rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+}
+
+.day-card {
+    min-height: 310px;
+    padding: 1rem;
+    border: 1px solid var(--hopper-line);
+    border-radius: 1rem;
+    background: white;
+}
+
+.day-card h2 {
+    margin-bottom: .7rem;
+    font-size: 1.05rem;
+}
+
+.day-note {
+    min-height: 3rem;
+    color: var(--hopper-green);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.meal-slot {
+    min-height: 96px;
+    margin-top: .65rem;
+    padding: .75rem;
+    border-radius: .7rem;
+    background: var(--hopper-paper);
+}
+
+.meal-slot a span,
+.meal-slot a strong {
+    display: block;
+}
+
+.meal-slot a strong {
+    margin-bottom: .3rem;
+    color: var(--hopper-green);
+    font-size: .7rem;
+    text-transform: uppercase;
+}
+
+.takeout {
+    color: #8a5a34;
+    font-weight: 800;
+}
+
+.grocery-panel {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background: var(--hopper-ink);
+    color: white;
+}
+
+.grocery-panel h2 {
+    font-size: 1.7rem;
+}
+
+.grocery-panel ul {
+    columns: 3 220px;
+}
+
+.grocery-panel li {
+    margin-bottom: .55rem;
+    break-inside: avoid;
+}
+
+.grocery-panel input:checked + span {
+    opacity: .55;
+    text-decoration: line-through;
+}
+
+@media (max-width: 800px) {
+    .planner-controls,
+    .grocery-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .planner-shell {
+        padding: 1rem;
+    }
+}
