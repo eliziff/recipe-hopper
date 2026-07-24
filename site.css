@@ -519,7 +519,29 @@ main img.rounded-xl {
 
 .grocery-panel .eyebrow { margin-top: 0; color: #b8cbb9; }
 .grocery-panel h2 { margin-top: .25rem; font-size: 1.5rem; }
-.grocery-panel ul { columns: 3 210px; }
+.pantry-note {
+  margin-top: .7rem;
+  color: #cbd6ca;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.grocery-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.grocery-group h3 {
+  margin-bottom: .6rem;
+  color: #b8cbb9;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.grocery-panel ul { columns: auto; }
 .grocery-panel li { margin-bottom: .5rem; break-inside: avoid; font-size: .88rem; }
 .grocery-panel label { cursor: pointer; }
 .grocery-panel input { accent-color: #9fbea3; }
@@ -529,6 +551,7 @@ main img.rounded-xl {
   .site-header { grid-template-columns: 220px 1fr auto; }
   main .grid.md\:grid-cols-3 { grid-template-columns: 280px minmax(0, 1fr); }
   .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grocery-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .day-card:first-child { grid-column: 1 / -1; }
 }
 
@@ -544,6 +567,7 @@ main img.rounded-xl {
   .site-brand small { display: none; }
   .site-plan-link { grid-column: 2; grid-row: 1; }
   .planner-controls, .grocery-panel, .prep-brief { grid-template-columns: 1fr; }
+  .grocery-groups { grid-template-columns: 1fr; }
   main .grid.md\:grid-cols-3 { grid-template-columns: 1fr; }
   .week-grid { grid-template-columns: 1fr; }
   .day-card:first-child { grid-column: auto; }
