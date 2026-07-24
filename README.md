@@ -16,7 +16,12 @@ replace the cache or `--seed NUMBER` to reproduce a particular sample.
 The bulk GitHub adapter selects practical complete meals from
 [`josephrmartinez/recipe-dataset`](https://github.com/josephrmartinez/recipe-dataset),
 whose README identifies the recipe data as CC BY-SA 3.0. Each imported
-Cooklang file retains the repository source and license metadata.
+Cooklang file retains the repository source and license metadata. The default
+build combines 283 of these with 17 curated recipes for a 300-dish catalogue.
+Ingredient amounts are normalized to five portions: one recipe covers weekday
+lunches and the other covers weekday dinners after Sunday prep. A separate
+quick-breakfast rotation is made fresh daily, includes two different Whey
+smoothies each week, and feeds its ingredients into the Sunday grocery list.
 
 The GitHub Actions workflow builds the committed `.cook` files with the
 official CookCLI and publishes the static result to GitHub Pages.
