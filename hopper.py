@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import ast
+import csv
 import html
+import io
 import json
 import random
 import re
@@ -85,6 +88,12 @@ GITHUB_COOKS = [
         "author": "Mary Gdovka",
     },
 ]
+
+DATASET = {
+    "url": "https://raw.githubusercontent.com/josephrmartinez/recipe-dataset/main/13k-recipes.csv",
+    "source": "https://github.com/josephrmartinez/recipe-dataset",
+    "site": "GitHub · josephrmartinez/recipe-dataset",
+}
 
 CURRICULUM = {
     "Foolproof Pan Pizza": "dough-fermentation",
@@ -243,6 +252,48 @@ def is_meal(data: dict) -> bool:
     return "tofu" not in f"{title} {ingredients}" and not any(word in title for word in blocked)
 
 
+def is_practical_dataset_meal(data: dict) -> bool:
+    """Keep complete meals with ordinary Edmonton supermarket ingredients."""
+    title = clean(data.get("name")).lower()
+    ingredients = [clean(item) for item in data.get("recipeIngredient", [])]
+    meal_markers = (
+        "chicken", "turkey", "beef", "pork", "sausage", "fish", "shrimp",
+        "lentil", "bean", "chickpea", "pasta", "lasagna", "stew", "soup",
+        "curry", "chili", "risotto", "noodle", "casserole", "burger",
+        "taco", "pizza",
+    )
+    text = f"{title} {' '.join(ingredients).lower()}"
+    specialty = (
+        "tofu", "octopus", "squid", "rabbit", "venison", "foie gras",
+        "caviar", "truffle", "lobster", "scallop", "quail", "saffron",
+        "veal", "duck", "lamb", "liver", "brandy", "bourbon", "sherry",
+        "dry wine", "pinot noir", "chanterelle", "morel", "kurobuta",
+        "rib roast", "tenderloin", "smoked salmon", "prosciutto",
+    )
+    component_titles = (
+        "stock", "broth", "jam", "pickle", "relish", "bread", "rolls",
+        "stuffing", "amandine", "mashed potatoes", "crostini", "tartare",
+        "breakfast", "onion rings", "apple \"pizza\"", "kong jaban",
+        "marinated mixed beans", "green beans with shallots",
+        "sweet potato casserole", "fritters (panelle)", "kolaches",
+    )
+    dessert_titles = (
+        "cake", "cookie", "pie", "cobbler", "gelato", "ice cream", "rugelach",
+        "whoopie", "brownie", "pudding", "scone", "bark", "wet nuts", "puff",
+    )
+    steps = flatten_steps(data.get("recipeInstructions"))
+    return (
+        is_meal(data)
+        and any(word in title for word in meal_markers)
+        and not any(word in text for word in specialty)
+        and not any(word in title for word in component_titles)
+        and not any(word in title for word in dessert_titles)
+        and budget_score(data) <= 1
+        and 6 <= len(ingredients) <= 20
+        and 3 <= len(steps) <= 15
+    )
+
+
 def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
     title = clean(data.get("name") or data.get("headline"))
     ingredients = [clean(item) for item in data.get("recipeIngredient", []) if clean(item)]
@@ -263,6 +314,8 @@ def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
     ]
     if description:
         metadata.append(f"description: {yaml(description)}")
+    if data.get("license"):
+        metadata.append(f"license: {yaml(data['license'])}")
     metadata.extend(["---", ""])
     pantry = "\\\n".join(cook_ingredient(item) for item in ingredients)
     details = " · ".join(filter(None, (
@@ -300,6 +353,38 @@ def save_image(url: str, destination: Path, refresh: bool) -> None:
         print(f"  image skipped: {error}")
 
 
+def import_dataset(output: Path, count: int, rng: random.Random, refresh: bool) -> int:
+    rows = list(csv.DictReader(io.StringIO(fetch(DATASET["url"], refresh))))
+    rng.shuffle(rows)
+    existing = {path.stem for path in output.glob("*.cook")}
+    written = 0
+    for row in rows:
+        try:
+            ingredients = ast.literal_eval(row["Ingredients"])
+            data = {
+                "name": row["Title"],
+                "recipeIngredient": ingredients,
+                "recipeInstructions": row["Instructions"].splitlines(),
+                "author": DATASET["site"],
+                "license": "CC BY-SA 3.0 (per dataset README)",
+            }
+            stem = slug(data["name"])
+            if stem in existing or not is_practical_dataset_meal(data):
+                continue
+            stem, recipe, _ = make_cook(data, DATASET["site"], DATASET["source"])
+            (output / f"{stem}.cook").write_text(recipe, encoding="utf-8")
+            existing.add(stem)
+            written += 1
+            if written >= count:
+                break
+        except (SyntaxError, ValueError, TypeError):
+            continue
+    if written != count:
+        raise RuntimeError(f"dataset yielded {written}/{count} practical recipes")
+    print(f"{DATASET['site']}: {written} recipes")
+    return written
+
+
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
@@ -308,6 +393,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int)
     parser.add_argument("--refresh", action="store_true")
     parser.add_argument("--replace", action="store_true", help="replace the flat collection")
+    parser.add_argument("--github-count", type=int, default=100)
     args = parser.parse_args()
     rng = random.Random(args.seed)
     output = ROOT / "recipes"
@@ -365,6 +451,7 @@ def main() -> int:
             written += 1
         except Exception as error:
             print(f"GitHub recipe skipped: {error}")
+    written += import_dataset(output, args.github_count, rng, args.refresh)
     if not written:
         raise SystemExit("No recipes converted")
     return 0

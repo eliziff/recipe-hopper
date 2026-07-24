@@ -7,6 +7,8 @@
   --panel: #fff;
   --line: #dedfd8;
   --soft: #eef1eb;
+  --warm: #b96f3c;
+  --shadow: 0 18px 50px rgb(32 37 31 / 8%);
 }
 
 html { background: var(--paper); }
@@ -160,7 +162,58 @@ main > div > .flex.items-center.justify-between.mb-8 h1 {
   line-height: 1.6;
 }
 
-#recipes-grid { gap: 1.25rem; }
+#sort-controls { display: none !important; }
+
+.catalogue-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: .8rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.catalogue-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.catalogue-filters button,
+.catalogue-status button {
+  padding: .45rem .7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.catalogue-filters button:hover,
+.catalogue-filters button.is-active {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+}
+
+.catalogue-status {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.catalogue-status button {
+  margin-left: .35rem;
+  border-color: #bcc6ba;
+  color: var(--green);
+}
+
+#recipes-grid { gap: 1rem; }
+#recipes-grid > [hidden] { display: none; }
 
 .recipe-card {
   border: 1px solid var(--line);
@@ -185,6 +238,42 @@ main > div > .flex.items-center.justify-between.mb-8 h1 {
 .recipe-card:hover img { transform: none !important; }
 
 .recipe-card .bg-gradient-to-br { background: var(--soft); }
+
+.recipe-card--text {
+  position: relative;
+  min-height: 10.5rem;
+  background:
+    radial-gradient(circle at 100% 0, rgb(69 98 75 / 12%), transparent 52%),
+    var(--panel);
+}
+
+.recipe-card--text::after {
+  content: attr(data-initial);
+  position: absolute;
+  right: .4rem;
+  bottom: -1.25rem;
+  color: rgb(69 98 75 / 7%);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 7rem;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.recipe-card--text .p-6 { position: relative; z-index: 1; }
+
+.recipe-card--text .bg-gradient-to-br {
+  width: 2.4rem;
+  height: 2.4rem;
+  margin-bottom: .75rem;
+  border-radius: .55rem;
+  background: var(--soft);
+}
+
+.recipe-card--text .bg-gradient-to-br span {
+  opacity: .52;
+  font-size: 1rem;
+}
 
 .recipe-card .p-6 { padding: 1rem 1.05rem 1.1rem; }
 
@@ -335,21 +424,6 @@ main img.rounded-xl {
   object-fit: cover;
 }
 
-.planner-fab {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 40;
-  padding: .65rem .9rem;
-  border: 1px solid #344a39;
-  border-radius: .6rem;
-  background: var(--green);
-  color: white;
-  font-size: .9rem;
-  font-weight: 700;
-  box-shadow: 0 6px 18px rgb(32 37 31 / 16%);
-}
-
 .planner-shell {
   width: min(1180px, 100%);
   margin: auto;
@@ -373,11 +447,35 @@ main img.rounded-xl {
   letter-spacing: -.045em;
 }
 
-.planner-header > p:last-child {
+.planner-header > h1 + p {
   max-width: 62ch;
   color: var(--muted);
   line-height: 1.6;
 }
+
+.cycle-progress {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: .35rem;
+  margin-top: 1.25rem;
+}
+
+.cycle-progress span {
+  position: relative;
+  padding-top: .55rem;
+  border-top: 3px solid var(--line);
+  color: var(--muted);
+}
+
+.cycle-progress span.is-current {
+  border-color: var(--warm);
+  color: var(--ink);
+}
+
+.cycle-progress i,
+.cycle-progress small { display: block; font-style: normal; }
+.cycle-progress i { font-size: .78rem; font-weight: 800; }
+.cycle-progress small { font-size: .62rem; }
 
 .eyebrow {
   margin: 1rem 0 0;
@@ -390,7 +488,7 @@ main img.rounded-xl {
 
 .planner-controls {
   display: grid;
-  grid-template-columns: 1fr 1fr 180px;
+  grid-template-columns: 1fr 1fr 160px 170px;
   gap: .8rem;
   padding: 1rem;
   border: 1px solid var(--line);
@@ -422,6 +520,30 @@ main img.rounded-xl {
   outline: 3px solid rgb(69 98 75 / 14%);
 }
 
+.reroll-button {
+  align-self: end;
+  min-height: 3.25rem;
+  padding: .55rem .75rem;
+  border: 1px solid var(--green);
+  border-radius: .5rem;
+  background: var(--green);
+  color: white;
+  text-align: left;
+}
+
+.reroll-button span,
+.reroll-button small { display: block; }
+.reroll-button span { font-size: .82rem; font-weight: 800; }
+.reroll-button small { margin-top: .1rem; opacity: .72; font-size: .65rem; }
+.reroll-button:hover { background: #354d3a; }
+
+.planner-controls-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+}
+
 .skill-focus {
   margin: 0;
   padding: 1rem 1.1rem;
@@ -429,6 +551,7 @@ main img.rounded-xl {
   border-left: 4px solid var(--green);
   border-radius: .6rem;
   background: var(--soft);
+  box-shadow: var(--shadow);
 }
 
 .skill-focus .eyebrow { margin: 0; }
@@ -468,6 +591,12 @@ main img.rounded-xl {
   border: 1px solid var(--line);
   border-radius: .7rem;
   background: var(--panel);
+  box-shadow: 0 8px 24px rgb(32 37 31 / 4%);
+}
+
+.day-card:first-child {
+  border-color: #bdcbbb;
+  background: #fbfcf9;
 }
 
 .day-card h2 {
@@ -526,6 +655,32 @@ main img.rounded-xl {
   line-height: 1.45;
 }
 
+.grocery-progress {
+  margin-top: .9rem;
+  color: white;
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.grocery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: .65rem;
+}
+
+.grocery-actions button {
+  padding: .42rem .58rem;
+  border: 1px solid #5d685d;
+  border-radius: .4rem;
+  background: #2a312a;
+  color: white;
+  font-size: .7rem;
+  font-weight: 750;
+}
+
+.grocery-actions button:hover { border-color: #a6b6a5; }
+
 .grocery-groups {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -553,6 +708,7 @@ main img.rounded-xl {
   .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grocery-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .day-card:first-child { grid-column: 1 / -1; }
+  .planner-controls { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 720px) {
@@ -571,6 +727,9 @@ main img.rounded-xl {
   main .grid.md\:grid-cols-3 { grid-template-columns: 1fr; }
   .week-grid { grid-template-columns: 1fr; }
   .day-card:first-child { grid-column: auto; }
+  .catalogue-toolbar { align-items: flex-start; flex-direction: column; }
+  .catalogue-status { order: -1; }
+  .cycle-progress small { display: none; }
   main img.rounded-xl { aspect-ratio: 4 / 3; }
   .ingredient-badge { display: inline; }
 }

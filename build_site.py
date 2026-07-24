@@ -45,6 +45,85 @@ header = """
   <a class="site-plan-link" href="/recipe-hopper/planner.html">Weekly plan</a>
 </header>
 """
+catalogue_toolbar = """
+<section class="catalogue-toolbar" aria-label="Recipe filters">
+  <div class="catalogue-filters" role="group" aria-label="Filter recipes">
+    <button class="is-active" type="button" data-filter="all">All dishes</button>
+    <button type="button" data-filter="stretch">Skill-building</button>
+    <button type="button" data-filter="vegetarian">Vegetarian</button>
+    <button type="button" data-filter="poultry">Chicken &amp; turkey</button>
+    <button type="button" data-filter="meat">Beef &amp; pork</button>
+    <button type="button" data-filter="seafood">Seafood</button>
+    <button type="button" data-filter="soup">Soups &amp; stews</button>
+    <button type="button" data-filter="pasta">Pasta &amp; noodles</button>
+  </div>
+  <p id="catalogue-status" class="catalogue-status" aria-live="polite"></p>
+</section>
+"""
+catalogue_script = """
+<script>
+(() => {
+  const grid = document.getElementById("recipes-grid");
+  if (!grid) return;
+  const cards = [...grid.querySelectorAll(".recipe-card")];
+  const status = document.getElementById("catalogue-status");
+  const search = document.getElementById("search-input");
+  const buttons = [...document.querySelectorAll("[data-filter]")];
+  const PAGE = 18;
+  let filter = "all";
+  let limit = PAGE;
+
+  const category = (card) => {
+    const title = card.querySelector("h3").textContent.toLowerCase();
+    if (card.textContent.includes("Stretch")) return "stretch";
+    if (/\\b(chicken|turkey)\\b/.test(title)) return "poultry";
+    if (/\\b(beef|pork|sausage|burger|chorizo|bacon)\\b/.test(title)) return "meat";
+    if (/\\b(shrimp|fish|salmon|cod|seafood)\\b/.test(title)) return "seafood";
+    if (/\\b(soup|stew|chowder|chili)\\b/.test(title)) return "soup";
+    if (/\\b(pasta|noodle|linguine|lasagna|gnocchi|orzo|risotto|penne)\\b/.test(title)) return "pasta";
+    return "vegetarian";
+  };
+
+  cards.forEach(card => {
+    card.dataset.category = category(card);
+    card.classList.toggle("recipe-card--text", !card.querySelector("img"));
+    if (!card.querySelector("img")) {
+      card.dataset.initial = card.querySelector("h3").textContent.trim()
+        .split(/\\s+/).slice(0, 2).map(word => word[0]).join("").toUpperCase();
+    }
+  });
+
+  const draw = () => {
+    const query = (search?.value || "").trim().toLowerCase();
+    const matches = cards.filter(card => {
+      const categoryMatch = filter === "all" || card.dataset.category === filter;
+      return categoryMatch && (!query || card.textContent.toLowerCase().includes(query));
+    });
+    cards.forEach(card => { card.hidden = true; });
+    matches.slice(0, limit).forEach(card => { card.hidden = false; });
+    const shown = Math.min(matches.length, limit);
+    status.innerHTML = `Showing ${shown} of ${matches.length} dishes` +
+      (shown < matches.length ? ` <button type="button" id="show-more">Show ${Math.min(PAGE, matches.length - shown)} more</button>` : "");
+    document.getElementById("show-more")?.addEventListener("click", () => {
+      limit += PAGE;
+      draw();
+    });
+  };
+
+  buttons.forEach(button => button.addEventListener("click", () => {
+    filter = button.dataset.filter;
+    limit = PAGE;
+    buttons.forEach(item => item.classList.toggle("is-active", item === button));
+    draw();
+  }));
+  search?.addEventListener("input", () => {
+    limit = PAGE;
+    draw();
+  });
+  draw();
+})();
+</script>
+"""
 recipe_count = len(list((ROOT / "recipes").glob("*.cook")))
 for page in SITE.rglob("*.html"):
     text = page.read_text(encoding="utf-8")
@@ -56,7 +135,7 @@ for page in SITE.rglob("*.html"):
         flags=re.S,
     )
     text = text.replace("Recipes - Cook</title>", "Recipe Hopper</title>")
-    text = text.replace(" - Cook</title>", " · Recipe Hopper</title>")
+    text = text.replace(" - Cook</title>", " &middot; Recipe Hopper</title>")
     text = re.sub(
         r'<a href="[^"]+\.cook"\s+download.*?title="Download \.cook source".*?</a>',
         "",
@@ -80,7 +159,7 @@ for page in SITE.rglob("*.html"):
     text = text.replace(">stretch</span>", ">Stretch</span>")
     text = re.sub(
         r">#skill-([a-z-]+)</span>",
-        lambda match: f">Skill · {match.group(1).replace('-', ' ').title()}</span>",
+        lambda match: f">Skill: {match.group(1).replace('-', ' ').title()}</span>",
         text,
     )
     text = text.replace(">#approachable</span>", ">Approachable</span>")
@@ -93,9 +172,15 @@ for page in SITE.rglob("*.html"):
             lambda match: (
                 f"{match.group(1)}Plan, cook, repeat{match.group(2)}"
                 f'<p class="catalog-intro">{recipe_count} complete dishes selected '
-                "for one-shop weeks and steady skill building.</p>"
+                "for Edmonton supermarkets, one-shop weeks, and steady skill building.</p>"
             ),
             text,
             count=1,
         )
+        text = text.replace(
+            '<div id="recipes-grid"',
+            catalogue_toolbar + '\n<div id="recipes-grid"',
+            1,
+        )
+        text = text.replace("</body>", catalogue_script + "\n</body>")
     page.write_text(text, encoding="utf-8")
