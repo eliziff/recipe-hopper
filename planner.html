@@ -27,13 +27,14 @@
       </label>
     </section>
 
-    <section class="skill-focus" aria-live="polite">
-      <p class="eyebrow">This week's new concept</p>
-      <h2 id="skill"></h2>
-      <p id="skill-note"></p>
-    </section>
-
-    <p class="batch-note" id="batch-note"></p>
+    <div class="prep-brief">
+      <section class="skill-focus" aria-live="polite">
+        <p class="eyebrow">This week's new concept</p>
+        <h2 id="skill"></h2>
+        <p id="skill-note"></p>
+      </section>
+      <p class="batch-note" id="batch-note"></p>
+    </div>
     <section class="week-grid" id="week" aria-label="One-week meal calendar"></section>
 
     <section class="grocery-panel">
@@ -62,7 +63,9 @@
     function option(recipe, index) {
       const node = document.createElement("option");
       node.value = index;
-      node.textContent = `${recipe.title} — ${difficulty(recipe)} · ${technique(recipe)}`;
+      node.textContent = difficulty(recipe) === "Stretch"
+        ? `${recipe.title} — ${technique(recipe)}`
+        : recipe.title;
       return node;
     }
 

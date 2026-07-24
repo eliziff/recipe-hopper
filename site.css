@@ -17,10 +17,109 @@ body.bg-gray-50 {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+.dark body.bg-gray-50 {
+  background: var(--paper);
+  color: var(--ink);
+}
+
 .viewport {
   max-width: 1180px;
   padding: 1rem 1.25rem 4rem;
 }
+
+.site-header {
+  position: relative;
+  display: grid;
+  grid-template-columns: 260px minmax(240px, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding: .85rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: rgb(247 246 241 / 94%);
+}
+
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  color: var(--ink);
+}
+
+.site-mark {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  font-family: Georgia, serif;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.site-brand strong,
+.site-brand small { display: block; }
+
+.site-brand strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+}
+
+.site-brand small {
+  margin-top: .05rem;
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+.site-search { position: relative; }
+
+.site-search input {
+  width: 100%;
+  padding: .68rem .85rem;
+  border: 1px solid #cfd3cb;
+  border-radius: .5rem;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.site-search input:focus {
+  border-color: var(--green);
+  outline: 3px solid rgb(69 98 75 / 12%);
+}
+
+.site-search #search-results {
+  position: absolute;
+  top: calc(100% + .4rem);
+  z-index: 100;
+  width: 100%;
+  max-height: 26rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: var(--panel);
+  box-shadow: 0 16px 40px rgb(32 37 31 / 14%);
+}
+
+.site-search #search-results a {
+  display: block;
+  padding: .7rem .8rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.site-plan-link {
+  padding: .65rem .85rem;
+  border-radius: .5rem;
+  background: var(--green);
+  color: white;
+  font-size: .85rem;
+  font-weight: 750;
+}
+
+.site-plan-link:hover { background: #354d3a; }
 
 nav.bg-white {
   border: 1px solid var(--line);
@@ -34,6 +133,31 @@ h2.bg-gradient-to-r {
   color: var(--ink);
   -webkit-text-fill-color: currentColor;
   letter-spacing: -.025em;
+}
+
+main h1,
+.planner-header h1,
+.grocery-panel h2 {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+main > div > .flex.items-center.justify-between.mb-8 {
+  display: block;
+  max-width: 720px;
+  margin-bottom: 1.5rem;
+}
+
+main > div > .flex.items-center.justify-between.mb-8 h1 {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1;
+}
+
+.catalog-intro {
+  max-width: 58ch;
+  margin-top: .65rem;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 #recipes-grid { gap: 1.25rem; }
@@ -58,7 +182,19 @@ h2.bg-gradient-to-r {
   object-fit: cover;
 }
 
+.recipe-card:hover img { transform: none !important; }
+
 .recipe-card .bg-gradient-to-br { background: var(--soft); }
+
+.recipe-card .p-6 { padding: 1rem 1.05rem 1.1rem; }
+
+.recipe-card h3 {
+  min-height: 2.8em;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.08rem;
+  line-height: 1.35;
+}
 
 .recipe-card .bg-gradient-to-r {
   border: 1px solid var(--line);
@@ -82,6 +218,100 @@ h2.bg-gradient-to-r {
 }
 
 .metadata-custom { display: none; }
+
+.breadcrumb {
+  margin-bottom: 1rem;
+  color: var(--muted);
+}
+
+.tag {
+  margin: 0;
+  border: 1px solid #d1d7ce;
+  border-radius: .35rem;
+  background: var(--soft);
+  color: var(--green);
+  box-shadow: none;
+  font-size: .72rem;
+}
+
+main .space-y-4 > .bg-gradient-to-r {
+  border-color: var(--line);
+  background: #f2f1eb;
+}
+
+#start-cooking-btn {
+  border-radius: .5rem;
+  background: var(--green);
+  box-shadow: none;
+}
+
+main .grid.md\:grid-cols-3 {
+  grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+main .md\:col-span-1,
+main .md\:col-span-2 { grid-column: auto; }
+
+main .md\:col-span-1 > .bg-white,
+main .md\:col-span-2 > .bg-white {
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  box-shadow: none;
+}
+
+main .md\:col-span-1 > .bg-white { padding: 1rem; }
+main .md\:col-span-2 > .bg-white { padding: 1.25rem; }
+
+main .md\:col-span-1 h2 {
+  margin-bottom: .75rem;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+main .md\:col-span-1 h3 {
+  color: var(--green);
+  font-size: .76rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+main .md\:col-span-1 li.bg-gradient-to-r {
+  padding: .62rem 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  font-size: .86rem;
+}
+
+main .md\:col-span-1 li.bg-gradient-to-r:last-child { border-bottom: 0; }
+
+main .md\:col-span-1 li.bg-gradient-to-r > span {
+  color: var(--green);
+  font-size: .8rem;
+}
+
+main .md\:col-span-2 > .bg-white > h3:first-of-type,
+main .md\:col-span-2 > .bg-white > h3:first-of-type + ol {
+  display: none;
+}
+
+main .md\:col-span-2 h3 {
+  margin-top: .5rem;
+  border-color: var(--line);
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+main .md\:col-span-2 ol > li.bg-gradient-to-r {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+main .md\:col-span-2 ol > li.bg-gradient-to-r:last-child { border-bottom: 0; }
 
 .ingredient-badge {
   border-color: #d4d8cf;
@@ -193,7 +423,7 @@ main img.rounded-xl {
 }
 
 .skill-focus {
-  margin: 1rem 0;
+  margin: 0;
   padding: 1rem 1.1rem;
   border: 1px solid #d5ddd2;
   border-left: 4px solid var(--green);
@@ -206,9 +436,23 @@ main img.rounded-xl {
 .skill-focus p:last-child { color: var(--muted); }
 
 .batch-note {
+  display: flex;
+  align-items: center;
   margin: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: var(--panel);
   color: var(--muted);
   font-size: .9rem;
+  line-height: 1.55;
+}
+
+.prep-brief {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .8rem;
+  margin: 1rem 0;
 }
 
 .week-grid {
@@ -282,13 +526,25 @@ main img.rounded-xl {
 .grocery-panel input:checked + span { opacity: .5; text-decoration: line-through; }
 
 @media (max-width: 980px) {
+  .site-header { grid-template-columns: 220px 1fr auto; }
+  main .grid.md\:grid-cols-3 { grid-template-columns: 280px minmax(0, 1fr); }
   .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .day-card:first-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 720px) {
   .viewport, .planner-shell { padding: .75rem .75rem 4rem; }
-  .planner-controls, .grocery-panel { grid-template-columns: 1fr; }
+  .site-header {
+    grid-template-columns: 1fr auto;
+    gap: .7rem;
+    margin-bottom: 1.5rem;
+    padding: .65rem 0 .85rem;
+  }
+  .site-search { grid-column: 1 / -1; grid-row: 2; }
+  .site-brand small { display: none; }
+  .site-plan-link { grid-column: 2; grid-row: 1; }
+  .planner-controls, .grocery-panel, .prep-brief { grid-template-columns: 1fr; }
+  main .grid.md\:grid-cols-3 { grid-template-columns: 1fr; }
   .week-grid { grid-template-columns: 1fr; }
   .day-card:first-child { grid-column: auto; }
   main img.rounded-xl { aspect-ratio: 4 / 3; }
