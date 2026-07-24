@@ -214,27 +214,11 @@ def yaml(value) -> str:
 
 
 def learning_tags(data: dict) -> list[str]:
-    """Choose one useful technique and a practical difficulty band."""
+    """Tag only the eight deliberate curriculum techniques."""
     title = clean(data.get("name"))
     if title in CURRICULUM:
         return ["stretch", f"skill-{CURRICULUM[title]}"]
-    steps = flatten_steps(data.get("recipeInstructions"))
-    ingredients = [clean(item) for item in data.get("recipeIngredient", [])]
-    text = " ".join([clean(data.get("name")), *ingredients, *steps]).lower()
-    techniques = [
-        ("dough-fermentation", ("yeast", "knead", "proof", "pizza dough")),
-        ("emulsifying", ("emuls", "vinaigrette", "mayonnaise", "whisk in butter")),
-        ("browning-and-fond", ("sear", "deglaze", "fond", "golden brown")),
-        ("blooming-spices", ("curry", "toast the spices", "chili powder", "garam masala")),
-        ("braising", ("braise", "low and slow", "stew", "simmer for 1 hour")),
-        ("roasting", ("roast", "sheet pan", "baking sheet")),
-        ("marinating", ("marinade", "marinate")),
-        ("starch-control", ("risotto", "pasta water", "one-pot pasta")),
-    ]
-    technique = next((name for name, words in techniques if any(word in text for word in words)), "timing-and-seasoning")
-    demanding = ("knead", "proof", "deglaze", "emuls", "deep-fry", "stuff", "roll out")
-    score = len(steps) + len(ingredients) // 4 + sum(word in text for word in demanding) * 3
-    return ["approachable", f"skill-{technique}"]
+    return ["approachable"]
 
 
 def budget_score(data: dict) -> int:
