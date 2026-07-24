@@ -51,6 +51,30 @@ SOURCES = {
             "https://www.allrecipes.com/recipe/223042/chicken-parmesan/",
         ],
     },
+    "Canadian Living": {
+        "seeds": [
+            "https://www.canadianliving.com/food/lunch-and-dinner/recipe/simple-broccoli-sausage-pasta",
+            "https://www.canadianliving.com/food/lunch-and-dinner/recipe/one-pot-turkey-bean-pasta",
+            "https://www.canadianliving.com/food/lunch-and-dinner/recipe/easy-oven-baked-crispy-tofu",
+            "https://www.canadianliving.com/food/lunch-and-dinner/recipe/one-pot-pasta-e-fagioli",
+        ],
+    },
+    "Good Food": {
+        "seeds": [
+            "https://www.bbcgoodfood.com/recipes/sausage-ragu",
+            "https://www.bbcgoodfood.com/recipes/speedy-lentil-coconut-curry",
+            "https://www.bbcgoodfood.com/recipes/spiced-chicken-skewers-chopped-salad-flatbreads",
+            "https://www.bbcgoodfood.com/recipes/teriyaki-tofu",
+        ],
+    },
+    "Budget Bytes": {
+        "seeds": [
+            "https://www.budgetbytes.com/one-pot-veggie-pasta/",
+            "https://www.budgetbytes.com/sweet-and-spicy-glazed-chicken-thighs/",
+            "https://www.budgetbytes.com/one-pot-roasted-red-pepper-pasta/",
+            "https://www.budgetbytes.com/beef-taco-pasta/",
+        ],
+    },
 }
 
 UNITS = (
@@ -66,7 +90,7 @@ def slug(value: str) -> str:
 
 def clean(value) -> str:
     value = html.unescape(re.sub(r"<[^>]+>", " ", str(value or "")))
-    if any(marker in value for marker in ("â€", "Â", "â€¢", "â")):
+    if any(marker in value for marker in ("Ã", "Â", "â€", "Å")):
         try:
             value = value.encode("latin-1").decode("utf-8")
         except UnicodeError:
@@ -125,7 +149,7 @@ def parse_recipe(page: str):
 
 def flatten_steps(value) -> list[str]:
     if isinstance(value, str):
-        return [clean(value)]
+        return [part for part in re.split(r"\s*•\s*", clean(value)) if part]
     steps = []
     for item in value or []:
         if isinstance(item, str):
@@ -133,7 +157,7 @@ def flatten_steps(value) -> list[str]:
         elif item.get("@type") == "HowToSection":
             steps.extend(flatten_steps(item.get("itemListElement")))
         else:
-            steps.append(clean(item.get("text") or item.get("name")))
+            steps.extend(flatten_steps(item.get("text") or item.get("name")))
     return [step for step in steps if step]
 
 
@@ -169,6 +193,37 @@ def yaml(value) -> str:
     return json.dumps(clean(value), ensure_ascii=False)
 
 
+def learning_tags(data: dict) -> list[str]:
+    """Choose one useful technique and a practical difficulty band."""
+    steps = flatten_steps(data.get("recipeInstructions"))
+    ingredients = [clean(item) for item in data.get("recipeIngredient", [])]
+    text = " ".join([clean(data.get("name")), *ingredients, *steps]).lower()
+    techniques = [
+        ("dough-fermentation", ("yeast", "knead", "proof", "pizza dough")),
+        ("emulsifying", ("emuls", "vinaigrette", "mayonnaise", "whisk in butter")),
+        ("browning-and-fond", ("sear", "deglaze", "fond", "golden brown")),
+        ("blooming-spices", ("curry", "toast the spices", "chili powder", "garam masala")),
+        ("braising", ("braise", "low and slow", "stew", "simmer for 1 hour")),
+        ("roasting", ("roast", "sheet pan", "baking sheet")),
+        ("marinating", ("marinade", "marinate")),
+        ("starch-control", ("risotto", "pasta water", "one-pot pasta")),
+    ]
+    technique = next((name for name, words in techniques if any(word in text for word in words)), "timing-and-seasoning")
+    demanding = ("knead", "proof", "deglaze", "emuls", "deep-fry", "stuff", "roll out")
+    score = len(steps) + len(ingredients) // 4 + sum(word in text for word in demanding) * 3
+    return ["stretch" if score >= 11 else "approachable", f"skill-{technique}"]
+
+
+def budget_score(data: dict) -> int:
+    """Rough Edmonton cost/availability signal; lower is friendlier."""
+    text = " ".join([clean(data.get("name")), *map(clean, data.get("recipeIngredient", []))]).lower()
+    staples = ("bean", "lentil", "chickpea", "potato", "rice", "pasta", "egg", "tofu",
+               "cabbage", "carrot", "frozen", "canned", "chicken thigh", "ground ")
+    costly = ("lamb", "tenderloin", "sashimi", "scallop", "prosciutto", "blue cheese",
+              "truffle", "lobster", "salmon")
+    return sum(word in text for word in costly) * 4 - sum(word in text for word in staples)
+
+
 def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
     title = clean(data.get("name") or data.get("headline"))
     ingredients = [clean(item) for item in data.get("recipeIngredient", []) if clean(item)]
@@ -185,17 +240,19 @@ def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
         f"source: {yaml(url)}",
         f"author: {yaml(author(data.get('author')) or source_name)}",
         f"site: {yaml(source_name)}",
+        f"tags: {json.dumps(learning_tags(data))}",
     ]
     if description:
         metadata.append(f"description: {yaml(description)}")
     metadata.extend(["---", ""])
-    pantry = "Gather " + ", ".join(cook_ingredient(item) for item in ingredients) + "."
+    pantry = "\\\n".join(cook_ingredient(item) for item in ingredients)
     details = " · ".join(filter(None, (
         f"Servings: {servings}" if servings else "",
         f"Time: {total_time}" if total_time else "",
     )))
     notes = [f"> {details}", ""] if details else []
-    return filename, "\n".join(metadata + notes + [pantry, ""] + steps) + "\n", image_url(data.get("image"))
+    body = metadata + notes + ["= Ingredients", "", pantry, "", "= Directions", ""]
+    return filename, "\n".join(body) + "\n\n".join(steps) + "\n", image_url(data.get("image"))
 
 
 def candidates(config: dict, refresh: bool) -> list[str]:
@@ -231,20 +288,30 @@ def main() -> int:
     parser.add_argument("--per-source", type=int, default=4)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--refresh", action="store_true")
+    parser.add_argument("--replace", action="store_true", help="replace the flat collection")
     args = parser.parse_args()
     rng = random.Random(args.seed)
+    output = ROOT / "recipes"
+    if args.replace and output.exists():
+        shutil.rmtree(output)
+    output.mkdir(parents=True, exist_ok=True)
     written = 0
     for source_name, config in SOURCES.items():
-        output = ROOT / "recipes" / slug(source_name)
-        output.mkdir(parents=True, exist_ok=True)
         pool = candidates(config, args.refresh)
         rng.shuffle(pool)
-        source_written = 0
+        parsed = []
         for url in pool:
+            try:
+                data = parse_recipe(fetch(url, args.refresh))
+                parsed.append((budget_score(data), url, data))
+            except Exception as error:
+                print(f"{source_name}: skipped {url}: {error}")
+        parsed.sort(key=lambda item: item[0])
+        source_written = 0
+        for _, url, data in parsed:
             if source_written >= args.per_source:
                 break
             try:
-                data = parse_recipe(fetch(url, args.refresh))
                 stem, recipe, picture = make_cook(data, source_name, url)
                 path = output / f"{stem}.cook"
                 path.write_text(recipe, encoding="utf-8")

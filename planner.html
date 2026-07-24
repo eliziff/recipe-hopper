@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Weekly Meal Plan</title>
+  <link rel="stylesheet" href="/recipe-hopper/static/css/output.css">
+  <link rel="stylesheet" href="/recipe-hopper/static/css/custom-styles.css">
+</head>
+<body class="bg-gray-50">
+  <main class="planner-shell">
+    <header class="planner-header">
+      <a href="/recipe-hopper/">← Recipes</a>
+      <p class="eyebrow">One shop. Two cooks. One week.</p>
+      <h1>Weekly meal plan</h1>
+      <p>Breakfast is excluded. Sunday is always grocery and prep day. Each week pairs a comfortable cook with one new skill.</p>
+    </header>
+
+    <section class="planner-controls" aria-label="Plan settings">
+      <label>Approachable cook<select id="meal-a"></select></label>
+      <label>Stretch cook<select id="meal-b"></select></label>
+      <label>Takeout day
+        <select id="takeout">
+          <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+          <option>Thursday</option><option>Friday</option><option>Saturday</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="skill-focus" aria-live="polite">
+      <p class="eyebrow">This week's new concept</p>
+      <h2 id="skill"></h2>
+      <p id="skill-note"></p>
+    </section>
+
+    <p class="batch-note" id="batch-note"></p>
+    <section class="week-grid" id="week" aria-label="One-week meal calendar"></section>
+
+    <section class="grocery-panel">
+      <div>
+        <p class="eyebrow">Sunday · one trip</p>
+        <h2>Combined grocery list</h2>
+      </div>
+      <ul id="groceries"></ul>
+    </section>
+  </main>
+  <script>
+    const root = "/recipe-hopper/";
+    const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const sunday = new Date();
+    sunday.setDate(sunday.getDate() - sunday.getDay());
+    const weekKey = sunday.toLocaleDateString("en-CA");
+    const weekNumber = Math.floor(sunday.getTime() / 604800000);
+    const state = JSON.parse(localStorage.getItem("recipe-hopper-plan") || "{}");
+    let recipes = [];
+
+    const save = () => localStorage.setItem("recipe-hopper-plan", JSON.stringify({
+      week: weekKey, a: mealA.value, b: mealB.value, takeout: takeout.value
+    }));
+
+    function option(recipe, index) {
+      const node = document.createElement("option");
+      node.value = index;
+      node.textContent = `${recipe.title} — ${difficulty(recipe)} · ${technique(recipe)}`;
+      return node;
+    }
+
+    const difficulty = recipe => recipe.tags?.includes("stretch") ? "Stretch" : "Approachable";
+    const technique = recipe => (recipe.tags?.find(tag => tag.startsWith("skill-")) || "skill-timing-and-seasoning")
+      .slice(6).replaceAll("-", " ");
+    const costScore = recipe => {
+      const text = `${recipe.title} ${recipe.ingredients.join(" ")}`.toLowerCase();
+      const staples = ["bean","lentil","chickpea","potato","rice","pasta","egg","tofu","carrot","frozen","canned","chicken thigh","ground "];
+      const costly = ["lamb","tenderloin","sashimi","scallop","prosciutto","blue cheese","truffle","lobster","salmon"];
+      return costly.filter(word => text.includes(word)).length * 4 - staples.filter(word => text.includes(word)).length;
+    };
+
+    function mealLink(recipe, label) {
+      return `<a href="${root}${recipe.path}"><strong>${label}</strong><span>${recipe.title}</span></a>`;
+    }
+
+    function render() {
+      const a = recipes[+mealA.value], b = recipes[+mealB.value];
+      if (!a || !b) return;
+      save();
+      skill.textContent = technique(b).replace(/\b\w/g, letter => letter.toUpperCase());
+      skillNote.textContent = `The ${difficulty(a).toLowerCase()} recipe builds momentum; the stretch recipe is where you practise this technique.`;
+      batchNote.textContent = `On Sunday, cook 6 portions of each recipe. Eat one portion of each fresh and refrigerate or freeze the remaining 10 portions.`;
+      const leftoverDays = days.slice(1).filter(day => day !== takeout.value);
+      let slot = 0;
+      week.innerHTML = days.map(day => {
+        let lunch, dinner, note = "";
+        if (day === "Sunday") {
+          lunch = mealLink(a, "Lunch · fresh");
+          dinner = mealLink(b, "Dinner · fresh");
+          note = `<p class="day-note">🛒 Grocery trip · prep both meals</p>`;
+        } else if (day === takeout.value) {
+          lunch = dinner = `<div class="takeout">Takeout</div>`;
+        } else {
+          lunch = mealLink(slot++ % 2 ? b : a, "Lunch · leftovers");
+          dinner = mealLink(slot++ % 2 ? b : a, "Dinner · leftovers");
+        }
+        return `<article class="day-card"><h2>${day}</h2>${note}<div class="meal-slot">${lunch}</div><div class="meal-slot">${dinner}</div></article>`;
+      }).join("");
+
+      const merged = [...new Set([...a.ingredients, ...b.ingredients])]
+        .sort((x, y) => x.localeCompare(y));
+      groceries.innerHTML = merged.map(item => `<li><label><input type="checkbox"> <span>${item}</span></label></li>`).join("");
+    }
+
+    const mealA = document.getElementById("meal-a");
+    const mealB = document.getElementById("meal-b");
+    const takeout = document.getElementById("takeout");
+    const week = document.getElementById("week");
+    const groceries = document.getElementById("groceries");
+    const batchNote = document.getElementById("batch-note");
+    const skill = document.getElementById("skill");
+    const skillNote = document.getElementById("skill-note");
+
+    fetch(root + "static/search-index.json").then(response => response.json()).then(data => {
+      recipes = data;
+      const byCost = ([a], [b]) => costScore(a) - costScore(b);
+      const easy = data.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Approachable").sort(byCost);
+      const stretch = data.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Stretch").sort(byCost);
+      easy.forEach(([recipe, index]) => {
+        mealA.append(option(recipe, index));
+      });
+      (stretch.length ? stretch : easy).forEach(([recipe, index]) => {
+        mealB.append(option(recipe, index));
+      });
+      const sameWeek = state.week === weekKey;
+      mealA.value = sameWeek && easy.some(([, index]) => String(index) === state.a) ? state.a : easy[weekNumber % easy.length]?.[1];
+      mealB.value = sameWeek && stretch.some(([, index]) => String(index) === state.b) ? state.b : (stretch[weekNumber % stretch.length]?.[1] ?? easy[1]?.[1]);
+      takeout.value = sameWeek ? state.takeout : "Friday";
+      [mealA, mealB, takeout].forEach(control => control.addEventListener("change", render));
+      render();
+    });
+  </script>
+</body>
+</html>
