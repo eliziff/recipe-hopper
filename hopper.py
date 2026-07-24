@@ -14,6 +14,7 @@ import re
 import shutil
 import sys
 import time
+from fractions import Fraction
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -21,6 +22,7 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).parent
 CACHE = ROOT / "_cache"
 USER_AGENT = "Mozilla/5.0 (compatible; recipe-hopper/1.0)"
+TARGET_SERVINGS = 5
 
 SOURCES = {
     "HelloFresh": {
@@ -204,7 +206,46 @@ def image_url(value) -> str:
     return value if isinstance(value, str) else ""
 
 
-def cook_ingredient(value: str) -> str:
+def serving_scale(value) -> Fraction:
+    text = clean(value).lower()
+    match = re.search(r"(\d+(?:\.\d+)?)\s*(?:to|-)?\s*\d*(?:\.\d+)?\s*servings?", text)
+    if not match:
+        match = re.search(r"(\d+(?:\.\d+)?)", text)
+    servings = Fraction(match.group(1)) if match else Fraction(4)
+    return Fraction(TARGET_SERVINGS, 1) / servings
+
+
+def scaled_quantity(value: str, factor: Fraction) -> str:
+    fractions = {"¼": " 1/4", "½": " 1/2", "¾": " 3/4", "⅓": " 1/3",
+                 "⅔": " 2/3", "⅛": " 1/8", "⅜": " 3/8", "⅝": " 5/8", "⅞": " 7/8"}
+    normalized = value
+    for symbol, replacement in fractions.items():
+        normalized = normalized.replace(symbol, replacement)
+
+    def amount(text: str):
+        try:
+            return sum((Fraction(part) for part in text.strip().split()), Fraction())
+        except (ValueError, ZeroDivisionError):
+            return None
+
+    def display(number: Fraction) -> str:
+        number = Fraction(max(1, int(float(number) * 8 + .5)), 8)
+        whole, remainder = divmod(number.numerator, number.denominator)
+        if not remainder:
+            return str(whole)
+        fraction = f"{remainder}/{number.denominator}"
+        return f"{whole} {fraction}" if whole else fraction
+
+    range_match = re.fullmatch(r"(.+?)\s*(?:-|to)\s*(.+)", normalized)
+    if range_match:
+        low, high = map(amount, range_match.groups())
+        if low is not None and high is not None:
+            return f"{display(low * factor)}-{display(high * factor)}"
+    parsed = amount(normalized)
+    return display(parsed * factor) if parsed is not None else value
+
+
+def cook_ingredient(value: str, factor: Fraction = Fraction(1)) -> str:
     value = clean(value).replace("@", "")
     match = re.match(
         rf"^([\d¼½¾⅓⅔⅛⅜⅝⅞./–— -]+)\s*(?:({UNITS})\b)?\s+(.+)$",
@@ -214,8 +255,14 @@ def cook_ingredient(value: str) -> str:
     if not match:
         return f"@{value}{{}}"
     quantity, unit, name = (clean(part) for part in match.groups())
-    quantity = quantity.replace("–", "-").replace("—", "-")
+    quantity = scaled_quantity(quantity.replace("–", "-").replace("—", "-"), factor)
     return f"@{name}{{{quantity}{'%' + unit if unit else ''}}}"
+
+
+def self_check() -> None:
+    assert serving_scale("4 servings") == Fraction(5, 4)
+    assert scaled_quantity("400", Fraction(5, 4)) == "500"
+    assert scaled_quantity("1 1/2", Fraction(5, 4)) == "1 7/8"
 
 
 def yaml(value) -> str:
@@ -267,27 +314,97 @@ def is_practical_dataset_meal(data: dict) -> bool:
         "tofu", "octopus", "squid", "rabbit", "venison", "foie gras",
         "caviar", "truffle", "lobster", "scallop", "quail", "saffron",
         "veal", "duck", "lamb", "liver", "brandy", "bourbon", "sherry",
-        "dry wine", "pinot noir", "chanterelle", "morel", "kurobuta",
+        "dry wine", "dry white wine", "dry red wine", "pinot noir",
+        "chanterelle", "morel", "kurobuta",
         "rib roast", "tenderloin", "smoked salmon", "prosciutto",
+        "sushi-grade", "goat shoulder", "nduja", "korean sesame leaves",
+        "corona beans", "purple sweet potato", "baby artichokes", "halibut",
+        "smoker", "swordfish", "cipolline", "dark rum", "grand marnier",
+        "iranian lime", "standard bricks", "cinder block", "fresh curry leaves",
+        "sturgeon", "nasturtium", "orvieto", "yellowtail", "kaffir lime",
+        "quince", "shirataki", "shiritaki", "coconut aminos",
     )
     component_titles = (
         "stock", "broth", "jam", "pickle", "relish", "bread", "rolls",
         "stuffing", "amandine", "mashed potatoes", "crostini", "tartare",
         "breakfast", "onion rings", "apple \"pizza\"", "kong jaban",
         "marinated mixed beans", "green beans with shallots",
+        "green beans with", "charred green beans", "stir-fried green beans",
         "sweet potato casserole", "fritters (panelle)", "kolaches",
+        "sorbet", "bite-size", " bites", "wings", "croquettes", "fritters",
+        "shrimp toasts", "baked beans", "green beans and peas", "refried",
+        "marinated japanese eggplant", "turkey skin cracklings",
+        "thanksgiving turkey", "holiday turkey", "tea-brined turkey",
+        "chile-rubbed turkey", "turkey for twenty",
+        "buttermilk fried shrimp", "coconut shrimp",
+        "fava bean, radish, and corn salad",
+        "buttermilk cabbage soup", "celery root soup", "chilled zucchini soup",
+        "cool jade soup", "roasted squash, pear, and ginger soup",
+        "golden beet soup", "porcini mushroom soup", "roasted asparagus soup",
+        "roasted beet soup", "roasted peanut soup", "spinach and mint soup",
+        "gefilte fish", "pot stickers", "thanksgiving",
+        "herb-butter turkey", "roasted pepper turkey",
+        "grilled turkey under a brick", "turkey tonnato",
+        "simple smoked beef short ribs", "celery-root soup", "chicken satés",
+        "sausage-stuffed rack of pork", "the cabbage soup diet",
+        "watercress soup", "big-batch instant pot white beans", "celery soup",
+        "ginger garlic green beans", "chocolate soup",
+        "mixed beans with peanuts", "3-ingredient tomato soup",
+        "carrot soup with star anise", "herbed bean salad",
+        "lemongrass-ginger-carrot soup", "agave-glazed pork belly",
+        "trail mix", "cheesy shrimp enchilada bake",
     )
     dessert_titles = (
         "cake", "cookie", "pie", "cobbler", "gelato", "ice cream", "rugelach",
         "whoopie", "brownie", "pudding", "scone", "bark", "wet nuts", "puff",
     )
     steps = flatten_steps(data.get("recipeInstructions"))
+    oversized_turkey = any(
+        "turkey" in ingredient.lower()
+        and (
+            re.search(
+                r"\b(?:1\d|[2-9]\d)(?:\s*-\s*to\s*\d+)?\s*-?\s*(?:lb|pound)",
+                ingredient,
+                re.I,
+            )
+            or (
+                "breasts" in ingredient.lower()
+                and re.search(
+                    r"\b(?:[3-9]|1\d)(?:\s*-\s*to\s*\d+)?\s*-?\s*(?:lb|pound)",
+                    ingredient,
+                    re.I,
+                )
+            )
+        )
+        for ingredient in ingredients
+    )
+    requires_liquor_store = any(
+        re.search(
+            r"\b(?:beer|stout|porter|tequila|triple sec|liqueur|vermouth|sak[eé]|"
+            r"(?:white|red|rice)\s+wine)\b(?!\s+vinegar)",
+            ingredient,
+            re.I,
+        )
+        for ingredient in ingredients
+    )
+    missing_components = (
+        "roasted winter vegetables", "big-batch marinated lentils",
+        "ancho chile sauce", "semolina gnocchi", "whole-wheat pizza crust",
+        "three-chile harissa", "chicken meatballs with ginger and miso",
+        "chile-lime sauce", "tea-and-lemon gravy", "sticky rice",
+        "red-curry peanut dipping sauce", "herb flower pesto",
+        "pizza dough",
+    )
     return (
         is_meal(data)
         and any(word in title for word in meal_markers)
         and not any(word in text for word in specialty)
         and not any(word in title for word in component_titles)
         and not any(word in title for word in dessert_titles)
+        and not any(word in text for word in missing_components)
+        and not any(re.search(r"\brecipe\b", ingredient, re.I) for ingredient in ingredients)
+        and not oversized_turkey
+        and not requires_liquor_store
         and budget_score(data) <= 1
         and 6 <= len(ingredients) <= 20
         and 3 <= len(steps) <= 15
@@ -302,7 +419,7 @@ def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
         raise ValueError("recipe is missing a title, ingredients, or instructions")
     filename = slug(title)
     total_time = clean(data.get("totalTime") or data.get("cookTime") or data.get("prepTime"))
-    servings = clean(data.get("recipeYield"))
+    factor = serving_scale(data.get("recipeYield"))
     description = clean(data.get("description"))
     metadata = [
         "---",
@@ -317,9 +434,9 @@ def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
     if data.get("license"):
         metadata.append(f"license: {yaml(data['license'])}")
     metadata.extend(["---", ""])
-    pantry = "\\\n".join(cook_ingredient(item) for item in ingredients)
+    pantry = "\\\n".join(cook_ingredient(item, factor) for item in ingredients)
     details = " · ".join(filter(None, (
-        f"Servings: {servings}" if servings else "",
+        f"Servings: {TARGET_SERVINGS}",
         f"Time: {total_time}" if total_time else "",
     )))
     notes = [f"> {details}", ""] if details else []
@@ -386,6 +503,7 @@ def import_dataset(output: Path, count: int, rng: random.Random, refresh: bool) 
 
 
 def main() -> int:
+    self_check()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
     parser = argparse.ArgumentParser()
@@ -393,7 +511,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int)
     parser.add_argument("--refresh", action="store_true")
     parser.add_argument("--replace", action="store_true", help="replace the flat collection")
-    parser.add_argument("--github-count", type=int, default=100)
+    parser.add_argument("--github-count", type=int, default=283)
     args = parser.parse_args()
     rng = random.Random(args.seed)
     output = ROOT / "recipes"
@@ -444,7 +562,8 @@ def main() -> int:
                 "",
             ])
             (output / f"{slug(item['title'])}.cook").write_text(
-                metadata + fetch(item["raw"], args.refresh).strip() + "\n",
+                metadata + f"> Servings: {TARGET_SERVINGS}\n\n" +
+                fetch(item["raw"], args.refresh).strip() + "\n",
                 encoding="utf-8",
             )
             print(f"GitHub · justintout/recipes: {item['title']}")

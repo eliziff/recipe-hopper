@@ -124,7 +124,6 @@ catalogue_script = """
 })();
 </script>
 """
-recipe_count = len(list((ROOT / "recipes").glob("*.cook")))
 for page in SITE.rglob("*.html"):
     text = page.read_text(encoding="utf-8")
     text = re.sub(
@@ -170,9 +169,7 @@ for page in SITE.rglob("*.html"):
         text = re.sub(
             r"(>\s*)All Recipes(\s*</h1>)",
             lambda match: (
-                f"{match.group(1)}Plan, cook, repeat{match.group(2)}"
-                f'<p class="catalog-intro">{recipe_count} complete dishes selected '
-                "for Edmonton supermarkets, one-shop weeks, and steady skill building.</p>"
+                f"{match.group(1)}Recipes{match.group(2)}"
             ),
             text,
             count=1,

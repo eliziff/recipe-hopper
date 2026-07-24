@@ -154,14 +154,6 @@ main > div > .flex.items-center.justify-between.mb-8 h1 {
   line-height: 1;
 }
 
-.catalog-intro {
-  max-width: 58ch;
-  margin-top: .65rem;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.6;
-}
-
 #sort-controls { display: none !important; }
 
 .catalogue-toolbar {
@@ -216,6 +208,8 @@ main > div > .flex.items-center.justify-between.mb-8 h1 {
 #recipes-grid > [hidden] { display: none; }
 
 .recipe-card {
+  position: relative;
+  min-height: 10.5rem;
   border: 1px solid var(--line);
   border-radius: .75rem;
   box-shadow: none;
@@ -230,9 +224,26 @@ main > div > .flex.items-center.justify-between.mb-8 h1 {
   transform: translateY(-1px) !important;
 }
 
+.recipe-card > .h-48 {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.recipe-card > .h-48::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(255 255 255 / 96%), rgb(255 255 255 / 74%));
+}
+
 .recipe-card img {
-  aspect-ratio: 16 / 10;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
   object-fit: cover;
+  opacity: .42;
+  filter: saturate(.8);
 }
 
 .recipe-card:hover img { transform: none !important; }
@@ -275,7 +286,11 @@ main > div > .flex.items-center.justify-between.mb-8 h1 {
   font-size: 1rem;
 }
 
-.recipe-card .p-6 { padding: 1rem 1.05rem 1.1rem; }
+.recipe-card .p-6 {
+  position: relative;
+  z-index: 1;
+  padding: 1rem 1.05rem 1.1rem;
+}
 
 .recipe-card h3 {
   min-height: 2.8em;
@@ -425,14 +440,15 @@ main img.rounded-xl {
 }
 
 .planner-shell {
-  width: min(1180px, 100%);
+  width: 100%;
+  max-width: 1220px;
+  min-width: 0;
   margin: auto;
-  padding: 1.5rem 1.25rem 4rem;
+  padding: 1.75rem 1.5rem 4rem;
 }
 
 .planner-header {
-  max-width: 700px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.35rem;
 }
 
 .planner-header > a {
@@ -441,41 +457,43 @@ main img.rounded-xl {
 }
 
 .planner-header h1 {
-  margin: .35rem 0 .65rem;
-  font-size: clamp(2.25rem, 5vw, 3.6rem);
+  margin: .3rem 0 0;
+  font-size: clamp(2.15rem, 5vw, 3.2rem);
   line-height: 1;
   letter-spacing: -.045em;
-}
-
-.planner-header > h1 + p {
-  max-width: 62ch;
-  color: var(--muted);
-  line-height: 1.6;
 }
 
 .cycle-progress {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: .35rem;
-  margin-top: 1.25rem;
+  gap: .5rem;
+  width: min(100%, 46rem);
+  margin-top: 1rem;
 }
 
-.cycle-progress span {
-  position: relative;
-  padding-top: .55rem;
-  border-top: 3px solid var(--line);
+.cycle-progress button {
+  width: 100%;
+  min-width: 0;
+  height: 2.65rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: var(--panel);
   color: var(--muted);
+  font-size: .8rem;
+  font-weight: 800;
+  cursor: pointer;
 }
 
-.cycle-progress span.is-current {
-  border-color: var(--warm);
-  color: var(--ink);
+.cycle-progress button:hover {
+  border-color: var(--green);
+  color: var(--green);
 }
 
-.cycle-progress i,
-.cycle-progress small { display: block; font-style: normal; }
-.cycle-progress i { font-size: .78rem; font-weight: 800; }
-.cycle-progress small { font-size: .62rem; }
+.cycle-progress button.is-current {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+}
 
 .eyebrow {
   margin: 1rem 0 0;
@@ -487,26 +505,29 @@ main img.rounded-xl {
 }
 
 .planner-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr 160px 170px;
-  gap: .8rem;
-  padding: 1rem;
-  border: 1px solid var(--line);
-  border-radius: .75rem;
-  background: var(--panel);
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 130px;
+  align-items: end;
+  padding: 1.1rem;
 }
 
 .planner-controls label {
+  display: block;
+  min-width: 0;
   color: var(--muted);
   font-size: .78rem;
   font-weight: 750;
 }
 
+.planner-controls label > span { display: block; }
+
 .planner-controls select {
   display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 2.75rem;
   margin-top: .35rem;
-  padding: .7rem .75rem;
+  padding: 0 .75rem;
   overflow: hidden;
   border: 1px solid #cfd3cb;
   border-radius: .5rem;
@@ -521,111 +542,127 @@ main img.rounded-xl {
 }
 
 .reroll-button {
-  align-self: end;
-  min-height: 3.25rem;
-  padding: .55rem .75rem;
+  height: 2.75rem;
+  padding: 0 .75rem;
   border: 1px solid var(--green);
   border-radius: .5rem;
   background: var(--green);
   color: white;
-  text-align: left;
+  font-size: .78rem;
+  font-weight: 800;
+  text-align: center;
 }
 
-.reroll-button span,
-.reroll-button small { display: block; }
-.reroll-button span { font-size: .82rem; font-weight: 800; }
-.reroll-button small { margin-top: .1rem; opacity: .72; font-size: .65rem; }
 .reroll-button:hover { background: #354d3a; }
 
-.planner-controls-note {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: var(--muted);
-  font-size: .7rem;
-}
-
-.skill-focus {
-  margin: 0;
-  padding: 1rem 1.1rem;
-  border: 1px solid #d5ddd2;
-  border-left: 4px solid var(--green);
-  border-radius: .6rem;
-  background: var(--soft);
-  box-shadow: var(--shadow);
-}
-
-.skill-focus .eyebrow { margin: 0; }
-.skill-focus h2 { margin: .2rem 0; font-size: 1.35rem; }
-.skill-focus p:last-child { color: var(--muted); }
-
-.batch-note {
+.prep-summary {
   display: flex;
   align-items: center;
-  margin: 0;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--line);
-  border-radius: .6rem;
-  background: var(--panel);
-  color: var(--muted);
-  font-size: .9rem;
-  line-height: 1.55;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: .75rem 0 1rem;
+  padding: .8rem 1rem;
 }
 
-.prep-brief {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: .8rem;
-  margin: 1rem 0;
+.prep-summary div {
+  display: flex;
+  align-items: baseline;
+  gap: .55rem;
+  min-width: 0;
+}
+
+.prep-summary span {
+  color: var(--green);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.prep-summary strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+}
+
+.batch-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: .82rem;
+  text-align: right;
 }
 
 .week-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: .65rem;
-  margin: 1.25rem 0;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .55rem;
+  margin: 0 0 1rem;
 }
 
 .day-card {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  padding: .75rem;
+  padding: .8rem;
   border: 1px solid var(--line);
-  border-radius: .7rem;
+  border-radius: .65rem;
   background: var(--panel);
-  box-shadow: 0 8px 24px rgb(32 37 31 / 4%);
 }
 
-.day-card:first-child {
+.day-card.is-prep-day {
   border-color: #bdcbbb;
+  border-top: 3px solid var(--green);
   background: #fbfcf9;
 }
 
-.day-card h2 {
-  margin: 0 0 .55rem;
-  font-size: .95rem;
+.day-card.is-prep-day,
+.day-card:last-child {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 7rem repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: .55rem;
 }
 
-.day-note {
-  min-height: 2.5rem;
+.day-card.is-prep-day h2,
+.day-card:last-child h2 {
+  display: flex;
+  align-items: center;
+  padding: 0 .75rem 0 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.day-card.is-prep-day .meal-slot,
+.day-card:last-child .meal-slot {
+  min-height: 4.25rem;
+  margin-top: 0;
+}
+
+.day-card h2 {
   margin: 0;
-  color: var(--green);
-  font-size: .72rem;
-  font-weight: 750;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--line);
+  font-size: .92rem;
 }
 
 .meal-slot {
   margin-top: .5rem;
-  padding: .65rem;
+  padding: .7rem;
+  min-height: 5.25rem;
   border-radius: .5rem;
   background: var(--soft);
-  font-size: .82rem;
-  line-height: 1.35;
+  font-size: .84rem;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
 .meal-slot a span,
-.meal-slot a strong { display: block; }
+.meal-slot a strong,
+.breakfast-slot span,
+.breakfast-slot strong { display: block; }
 
-.meal-slot a strong {
+.meal-slot a strong,
+.breakfast-slot strong {
   margin-bottom: .25rem;
   color: var(--green);
   font-size: .65rem;
@@ -634,62 +671,97 @@ main img.rounded-xl {
 }
 
 .meal-slot a:hover span { text-decoration: underline; }
-.takeout { color: #83552f; font-weight: 750; }
+.breakfast-slot { background: #f4efe7; }
+.breakfast-slot strong { color: #83552f; }
+.takeout,
+.open-slot {
+  display: grid;
+  min-height: 3.7rem;
+  place-items: center;
+  font-weight: 750;
+}
+.takeout { color: #83552f; }
+.open-slot { color: var(--muted); }
 
 .grocery-panel {
-  display: grid;
-  grid-template-columns: 210px 1fr;
-  gap: 1.5rem;
-  padding: 1.25rem;
-  border-radius: .75rem;
-  background: var(--ink);
-  color: white;
+  min-width: 0;
+  padding: 1.1rem;
+  color: var(--ink);
 }
 
-.grocery-panel .eyebrow { margin-top: 0; color: #b8cbb9; }
-.grocery-panel h2 { margin-top: .25rem; font-size: 1.5rem; }
-.pantry-note {
-  margin-top: .7rem;
-  color: #cbd6ca;
-  font-size: .78rem;
-  line-height: 1.45;
+.grocery-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
 }
+
+.grocery-panel .eyebrow { margin-top: 0; color: var(--green); }
+.grocery-panel h2 { margin: .15rem 0 0; font-size: 1.5rem; }
+.pantry-note {
+  margin-top: .35rem;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.grocery-meta { flex: 0 0 auto; text-align: right; }
 
 .grocery-progress {
-  margin-top: .9rem;
-  color: white;
+  margin: 0;
+  color: var(--muted);
   font-size: .78rem;
   font-weight: 750;
 }
 
 .grocery-actions {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: .4rem;
-  margin-top: .65rem;
+  margin-top: .45rem;
 }
 
 .grocery-actions button {
-  padding: .42rem .58rem;
-  border: 1px solid #5d685d;
+  padding: .42rem .65rem;
+  border: 1px solid var(--line);
   border-radius: .4rem;
-  background: #2a312a;
-  color: white;
+  background: var(--panel);
+  color: var(--green);
   font-size: .7rem;
   font-weight: 750;
 }
 
-.grocery-actions button:hover { border-color: #a6b6a5; }
+.grocery-actions button:first-child {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+}
 
 .grocery-groups {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
+  align-items: start;
+  gap: .75rem;
+  padding-top: .75rem;
 }
+
+.grocery-group {
+  min-width: 0;
+  margin: 0;
+  padding: .8rem;
+  border: 1px solid var(--line);
+  border-radius: .55rem;
+  background: #fafaf7;
+}
+
+.grocery-group.is-long { grid-column: 1 / -1; }
 
 .grocery-group h3 {
   margin-bottom: .6rem;
-  color: #b8cbb9;
+  color: var(--green);
   font-size: .7rem;
   font-weight: 800;
   letter-spacing: .09em;
@@ -697,9 +769,16 @@ main img.rounded-xl {
 }
 
 .grocery-panel ul { columns: auto; }
-.grocery-panel li { margin-bottom: .5rem; break-inside: avoid; font-size: .88rem; }
+.grocery-group.is-long ul { columns: 3; column-gap: 1.25rem; }
+.grocery-panel li {
+  margin-bottom: .5rem;
+  break-inside: avoid;
+  font-size: .86rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
 .grocery-panel label { cursor: pointer; }
-.grocery-panel input { accent-color: #9fbea3; }
+.grocery-panel input { margin-right: .25rem; accent-color: var(--green); }
 .grocery-panel input:checked + span { opacity: .5; text-decoration: line-through; }
 
 @media (max-width: 980px) {
@@ -707,12 +786,18 @@ main img.rounded-xl {
   main .grid.md\:grid-cols-3 { grid-template-columns: 280px minmax(0, 1fr); }
   .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grocery-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .day-card:first-child { grid-column: 1 / -1; }
-  .planner-controls { grid-template-columns: 1fr 1fr; }
+  .grocery-group.is-long { grid-column: 1 / -1; }
+  .grocery-group.is-long ul { columns: 2; }
+  .day-card.is-prep-day,
+  .day-card:last-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 720px) {
-  .viewport, .planner-shell { padding: .75rem .75rem 4rem; }
+  .viewport, .planner-shell {
+    width: 100%;
+    max-width: 100%;
+    padding: .9rem .75rem 4rem;
+  }
   .site-header {
     grid-template-columns: 1fr auto;
     gap: .7rem;
@@ -722,14 +807,48 @@ main img.rounded-xl {
   .site-search { grid-column: 1 / -1; grid-row: 2; }
   .site-brand small { display: none; }
   .site-plan-link { grid-column: 2; grid-row: 1; }
-  .planner-controls, .grocery-panel, .prep-brief { grid-template-columns: 1fr; }
+  .planner-controls { grid-template-columns: 1fr; }
+  .prep-summary, .grocery-header { align-items: flex-start; flex-direction: column; }
+  .batch-note, .grocery-meta { text-align: left; }
+  .grocery-actions { justify-content: flex-start; }
   .grocery-groups { grid-template-columns: 1fr; }
+  .grocery-group.is-long { grid-column: auto; }
+  .grocery-group.is-long ul { columns: 1; }
   main .grid.md\:grid-cols-3 { grid-template-columns: 1fr; }
   .week-grid { grid-template-columns: 1fr; }
-  .day-card:first-child { grid-column: auto; }
+  .day-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+    padding: .7rem;
+  }
+  .day-card h2 { grid-column: 1 / -1; }
+  .meal-slot {
+    min-width: 0;
+    min-height: 5.2rem;
+    margin-top: 0;
+    padding: .65rem;
+  }
+  .day-card.is-prep-day,
+  .day-card:last-child {
+    grid-column: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .breakfast-slot { grid-column: 1 / -1; }
+  .day-card.is-prep-day h2,
+  .day-card:last-child h2 {
+    display: block;
+    padding: 0 0 .5rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
   .catalogue-toolbar { align-items: flex-start; flex-direction: column; }
   .catalogue-status { order: -1; }
-  .cycle-progress small { display: none; }
+  .cycle-progress {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+  .cycle-progress button { font-size: .76rem; }
   main img.rounded-xl { aspect-ratio: 4 / 3; }
   .ingredient-badge { display: inline; }
 }
