@@ -10,10 +10,11 @@
 <body class="bg-gray-50">
   <main class="planner-shell">
     <header class="planner-header">
-      <a href="/recipe-hopper/">← Recipes</a>
+      <a href="/recipe-hopper/">← Recipe library</a>
       <p class="eyebrow" id="cycle">One shop. Two cooks. One week.</p>
       <h1>Weekly meal plan</h1>
-      <p>Breakfast is excluded. Sunday is always grocery and prep day. Each week pairs a comfortable cook with one new skill.</p>
+      <p>A calm Sunday system for every lunch and dinner: one grocery trip, two batch cooks, one takeout day, and one new technique to practise.</p>
+      <div class="cycle-progress" id="cycle-progress" aria-label="Eight-week cooking cycle"></div>
     </header>
 
     <section class="planner-controls" aria-label="Plan settings">
@@ -25,6 +26,8 @@
           <option>Thursday</option><option>Friday</option><option>Saturday</option>
         </select>
       </label>
+      <button class="reroll-button" id="reroll" type="button"><span>New pairing</span><small>Keep one easy + one stretch</small></button>
+      <p class="planner-controls-note">Lower-cost recipes with familiar Edmonton grocery staples appear first.</p>
     </section>
 
     <div class="prep-brief">
@@ -38,10 +41,15 @@
     <section class="week-grid" id="week" aria-label="One-week meal calendar"></section>
 
     <section class="grocery-panel">
-      <div>
+      <div class="grocery-intro">
         <p class="eyebrow">Sunday · one trip</p>
         <h2>Combined grocery list</h2>
         <p class="pantry-note">Salt, sugar, flour, black pepper and cooking oils are assumed on hand.</p>
+        <p class="grocery-progress" id="grocery-progress" aria-live="polite"></p>
+        <div class="grocery-actions">
+          <button id="copy-groceries" type="button">Copy list</button>
+          <button id="clear-groceries" type="button">Clear checks</button>
+        </div>
       </div>
       <div class="grocery-groups" id="groceries"></div>
     </section>
@@ -56,14 +64,17 @@
     const cycleWeek = weekNumber % 8 + 1;
     const state = JSON.parse(localStorage.getItem("recipe-hopper-plan") || "{}");
     let recipes = [];
+    let checked = new Set(state.week === weekKey ? state.checked || [] : []);
+    let latestGroceries = [];
 
     const save = () => localStorage.setItem("recipe-hopper-plan", JSON.stringify({
-      week: weekKey, a: mealA.value, b: mealB.value, takeout: takeout.value
+      week: weekKey, a: mealA.value, b: mealB.value, takeout: takeout.value,
+      checked: [...checked]
     }));
 
-    function option(recipe, index) {
+    function option(recipe) {
       const node = document.createElement("option");
-      node.value = index;
+      node.value = recipe.path;
       node.textContent = difficulty(recipe) === "Stretch"
         ? `${recipe.title} — ${technique(recipe)}`
         : recipe.title;
@@ -80,12 +91,14 @@
       return costly.filter(word => text.includes(word)).length * 4 - staples.filter(word => text.includes(word)).length;
     };
     const pantryStock = [
-      /^(kosher |sea |table )?salt\b/i,
-      /^(freshly ground |ground )?(black )?pepper(?:,|$| to taste)/i,
-      /^(white |brown |granulated |caster )?sugar(?:,|$)/i,
-      /^(all-purpose |plain )?flour(?:,|$)/i,
+      /^(?:(?:coarse|fine|flaky|kosher|sea|table)\s+)*salt\b/i,
+      /^(?:(?:freshly ground|ground) )?black pepper\b/i,
+      /^pepper(?:,|$| to taste)/i,
+      /^(white |brown |granulated |caster )?sugar\b/i,
+      /^(all[- ]purpose |plain )?flour\b/i,
       /^(extra-virgin )?olive oil\b/i,
-      /^(cooking|vegetable|canola) oil\b/i
+      /^(cooking|vegetable|canola) oil\b/i,
+      /^oil(?:$| (?:for|to) )/i
     ];
     const aliases = [
       [/^(yellow |red |white |sweet )?onions?(?:,.*)?$/i, "Onions"],
@@ -97,13 +110,14 @@
       [/\bchicken thighs?\b/i, "Chicken thighs"],
       [/\bground beef\b/i, "Ground beef"],
       [/\bparmesan\b/i, "Parmesan"],
-      [/\bmozzarella\b/i, "Mozzarella"]
+      [/\bmozzarella\b/i, "Mozzarella"],
+      [/\b(?:corn |flour )?taco shells?\b/i, "Taco shells"]
     ];
     const categoryRules = [
-      ["Produce", /\b(onion|garlic|potato|carrot|broccoli|mushroom|zucchini|pepper|poblano|corn|spinach|lettuce|greens|tomato|avocado|lemon|lime|basil|parsley|cilantro|ginger|cucumber|celery|apple)\b/i],
+      ["Produce", /\b(onion|garlic|potato|carrot|broccoli|mushroom|zucchini|bell pepper|green pepper|red pepper|yellow pepper|orange pepper|poblano|jalapeño|jalapeno|corn|spinach|lettuce|greens|tomato|avocado|lemon|lime|basil|parsley|cilantro|ginger|cucumber|celery|apple)\b/i],
       ["Meat & seafood", /\b(chicken|beef|turkey|pork|sausage|shrimp|salmon|fish|lamb|prosciutto)\b/i],
       ["Dairy & eggs", /\b(egg|milk|cream|butter|cheese|parmesan|mozzarella|provolone|yogurt|feta)\b/i],
-      ["Bakery", /\b(bread|bun|roll|tortilla|flatbread|pita)\b/i],
+      ["Bakery", /\b(bread|bun|roll|tortilla|flatbread|pita|taco shell)\b/i],
       ["Frozen", /\bfrozen\b/i]
     ];
     const canonicalIngredient = item => {
@@ -113,23 +127,30 @@
       return alias ? alias[1] : cleaned;
     };
     const groceryCategory = item => categoryRules.find(([, pattern]) => pattern.test(item))?.[0] || "Cans & dry goods";
+    const escapeHTML = value => value.replace(/[&<>"']/g, character => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[character]);
     console.assert(pantryStock.some(pattern => pattern.test("olive oil")), "olive oil should be pantry stock");
+    console.assert(pantryStock.some(pattern => pattern.test("coarse salt")), "salt variants should stay in pantry");
+    console.assert(pantryStock.some(pattern => pattern.test("brown sugar ($0.12)")), "sugar notes should stay in pantry");
+    console.assert(pantryStock.some(pattern => pattern.test("black pepper (freshly cracked)")), "black pepper notes should stay in pantry");
     console.assert(!pantryStock.some(pattern => pattern.test("Pepper Jack Cheese")), "pepper jack is not black pepper");
     console.assert(canonicalIngredient("chopped onion") === "Onions", "onion variants should merge");
+    console.assert(canonicalIngredient("hard corn taco shells") === "Taco shells", "taco shells should merge");
     console.assert(groceryCategory("Chicken breasts") === "Meat & seafood", "chicken should be grouped as meat");
+    console.assert(groceryCategory("cayenne pepper") === "Cans & dry goods", "ground spices are dry goods");
 
     function mealLink(recipe, label) {
       return `<a href="${root}${recipe.path}"><strong>${label}</strong><span>${recipe.title}</span></a>`;
     }
 
     function render() {
-      const a = recipes[+mealA.value], b = recipes[+mealB.value];
+      const a = recipes.find(recipe => recipe.path === mealA.value);
+      const b = recipes.find(recipe => recipe.path === mealB.value);
       if (!a || !b) return;
-      save();
       skill.textContent = technique(b).replace(/\b\w/g, letter => letter.toUpperCase());
       skillNote.textContent = `The ${difficulty(a).toLowerCase()} recipe builds momentum; the stretch recipe is where you practise this technique.`;
       batchNote.textContent = `On Sunday, cook 6 portions of each recipe. Eat one portion of each fresh and refrigerate or freeze the remaining 10 portions.`;
-      const leftoverDays = days.slice(1).filter(day => day !== takeout.value);
       let slot = 0;
       week.innerHTML = days.map(day => {
         let lunch, dinner, note = "";
@@ -157,12 +178,31 @@
         (result[groceryCategory(item)] ||= []).push(item);
         return result;
       }, {});
-      groceries.innerHTML = ["Produce","Meat & seafood","Dairy & eggs","Bakery","Frozen","Cans & dry goods"]
+      latestGroceries = ["Produce","Meat & seafood","Dairy & eggs","Bakery","Frozen","Cans & dry goods"]
         .filter(category => grouped[category]?.length)
-        .map(category => `<section class="grocery-group"><h3>${category}</h3><ul>${
-          grouped[category].sort((x, y) => x.localeCompare(y))
-            .map(item => `<li><label><input type="checkbox"> <span>${item}</span></label></li>`).join("")
+        .map(category => [category, grouped[category].sort((x, y) => x.localeCompare(y))]);
+      groceries.innerHTML = latestGroceries
+        .map(([category, items]) => `<section class="grocery-group"><h3>${category}</h3><ul>${
+          items.map(item => {
+            const key = encodeURIComponent(item.toLowerCase());
+            return `<li><label><input type="checkbox" data-key="${key}" ${checked.has(key) ? "checked" : ""}> <span>${escapeHTML(item)}</span></label></li>`;
+          }).join("")
         }</ul></section>`).join("");
+      groceries.querySelectorAll("input").forEach(input => input.addEventListener("change", () => {
+        input.checked ? checked.add(input.dataset.key) : checked.delete(input.dataset.key);
+        updateGroceryProgress();
+        save();
+      }));
+      updateGroceryProgress();
+      save();
+    }
+
+    function updateGroceryProgress() {
+      const boxes = [...groceries.querySelectorAll("input")];
+      const done = boxes.filter(box => box.checked).length;
+      groceryProgress.textContent = done
+        ? `${done} of ${boxes.length} picked up`
+        : `${boxes.length} items, organized by aisle`;
     }
 
     const mealA = document.getElementById("meal-a");
@@ -173,25 +213,64 @@
     const batchNote = document.getElementById("batch-note");
     const skill = document.getElementById("skill");
     const skillNote = document.getElementById("skill-note");
+    const groceryProgress = document.getElementById("grocery-progress");
+    const reroll = document.getElementById("reroll");
     document.getElementById("cycle").textContent = `Week ${cycleWeek} of 8 · one shop · two cooks`;
+    document.getElementById("cycle-progress").innerHTML = Array.from({length: 8}, (_, index) =>
+      `<span class="${index + 1 === cycleWeek ? "is-current" : ""}"><i>${index + 1}</i><small>${index + 1 === cycleWeek ? "This week" : "Week"}</small></span>`
+    ).join("");
 
     fetch(root + "static/search-index.json").then(response => response.json()).then(data => {
       recipes = data;
       const byCost = ([a], [b]) => costScore(a) - costScore(b);
       const easy = data.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Approachable").sort(byCost);
       const stretch = data.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Stretch").sort(byCost);
-      easy.forEach(([recipe, index]) => {
-        mealA.append(option(recipe, index));
+      easy.forEach(([recipe]) => {
+        mealA.append(option(recipe));
       });
-      (stretch.length ? stretch : easy).forEach(([recipe, index]) => {
-        mealB.append(option(recipe, index));
+      (stretch.length ? stretch : easy).forEach(([recipe]) => {
+        mealB.append(option(recipe));
       });
       const sameWeek = state.week === weekKey;
-      mealA.value = sameWeek && easy.some(([, index]) => String(index) === state.a) ? state.a : easy[weekNumber % easy.length]?.[1];
-      mealB.value = sameWeek && stretch.some(([, index]) => String(index) === state.b) ? state.b : (stretch[weekNumber % stretch.length]?.[1] ?? easy[1]?.[1]);
+      mealA.value = sameWeek && easy.some(([recipe]) => recipe.path === state.a)
+        ? state.a : easy[weekNumber % easy.length]?.[0].path;
+      mealB.value = sameWeek && stretch.some(([recipe]) => recipe.path === state.b)
+        ? state.b : (stretch[weekNumber % stretch.length]?.[0].path ?? easy[1]?.[0].path);
       takeout.value = sameWeek ? state.takeout : "Friday";
-      [mealA, mealB, takeout].forEach(control => control.addEventListener("change", render));
+      [mealA, mealB].forEach(control => control.addEventListener("change", () => {
+        checked.clear();
+        render();
+      }));
+      takeout.addEventListener("change", render);
+      reroll.addEventListener("click", () => {
+        const pick = choices => choices[Math.floor(Math.random() * choices.length)]?.[0].path;
+        const nextA = pick(easy);
+        const nextB = pick(stretch.length ? stretch : easy);
+        if (nextA) mealA.value = nextA;
+        if (nextB) mealB.value = nextB;
+        checked.clear();
+        render();
+      });
       render();
+    });
+
+    document.getElementById("copy-groceries").addEventListener("click", async event => {
+      const text = latestGroceries
+        .map(([category, items]) => `${category}\n${items.map(item => `- ${item}`).join("\n")}`)
+        .join("\n\n");
+      try {
+        await navigator.clipboard.writeText(text);
+        event.currentTarget.textContent = "Copied";
+      } catch {
+        event.currentTarget.textContent = "Copy unavailable";
+      }
+      setTimeout(() => { event.currentTarget.textContent = "Copy list"; }, 1500);
+    });
+    document.getElementById("clear-groceries").addEventListener("click", () => {
+      checked.clear();
+      groceries.querySelectorAll("input").forEach(input => { input.checked = false; });
+      updateGroceryProgress();
+      save();
     });
   </script>
 </body>
