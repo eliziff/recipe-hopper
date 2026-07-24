@@ -224,7 +224,7 @@ def learning_tags(data: dict) -> list[str]:
 def budget_score(data: dict) -> int:
     """Rough Edmonton cost/availability signal; lower is friendlier."""
     text = " ".join([clean(data.get("name")), *map(clean, data.get("recipeIngredient", []))]).lower()
-    staples = ("bean", "lentil", "chickpea", "potato", "rice", "pasta", "egg", "tofu",
+    staples = ("bean", "lentil", "chickpea", "potato", "rice", "pasta", "egg",
                "cabbage", "carrot", "frozen", "canned", "chicken thigh", "ground ")
     costly = ("lamb", "tenderloin", "sashimi", "scallop", "prosciutto", "blue cheese",
               "truffle", "lobster", "salmon")
@@ -234,12 +234,13 @@ def budget_score(data: dict) -> int:
 def is_meal(data: dict) -> bool:
     """Reject components and non-meals before they reach the weekly hopper."""
     title = clean(data.get("name")).lower()
+    ingredients = " ".join(map(clean, data.get("recipeIngredient", []))).lower()
     blocked = (
         "sauce", "dressing", "dip", "hard-boiled egg", "roast potatoes",
         "cookie", "cake", "pancake", "custard", "crumb bar", "apple crisp",
         "banana bread", "pico de gallo", "salsa",
     )
-    return not any(word in title for word in blocked)
+    return "tofu" not in f"{title} {ingredients}" and not any(word in title for word in blocked)
 
 
 def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
