@@ -41,8 +41,9 @@
       <div>
         <p class="eyebrow">Sunday · one trip</p>
         <h2>Combined grocery list</h2>
+        <p class="pantry-note">Salt, sugar, flour, black pepper and cooking oils are assumed on hand.</p>
       </div>
-      <ul id="groceries"></ul>
+      <div class="grocery-groups" id="groceries"></div>
     </section>
   </main>
   <script>
@@ -78,6 +79,44 @@
       const costly = ["lamb","tenderloin","sashimi","scallop","prosciutto","blue cheese","truffle","lobster","salmon"];
       return costly.filter(word => text.includes(word)).length * 4 - staples.filter(word => text.includes(word)).length;
     };
+    const pantryStock = [
+      /^(kosher |sea |table )?salt\b/i,
+      /^(freshly ground |ground )?(black )?pepper(?:,|$| to taste)/i,
+      /^(white |brown |granulated |caster )?sugar(?:,|$)/i,
+      /^(all-purpose |plain )?flour(?:,|$)/i,
+      /^(extra-virgin )?olive oil\b/i,
+      /^(cooking|vegetable|canola) oil\b/i
+    ];
+    const aliases = [
+      [/^(yellow |red |white |sweet )?onions?(?:,.*)?$/i, "Onions"],
+      [/\bgarlic\b/i, "Garlic"],
+      [/\bpotatoes?\b/i, "Potatoes"],
+      [/\bcarrots?\b/i, "Carrots"],
+      [/^(large )?eggs?(?:,.*)?$/i, "Eggs"],
+      [/\bchicken breasts?\b/i, "Chicken breasts"],
+      [/\bchicken thighs?\b/i, "Chicken thighs"],
+      [/\bground beef\b/i, "Ground beef"],
+      [/\bparmesan\b/i, "Parmesan"],
+      [/\bmozzarella\b/i, "Mozzarella"]
+    ];
+    const categoryRules = [
+      ["Produce", /\b(onion|garlic|potato|carrot|broccoli|mushroom|zucchini|pepper|poblano|corn|spinach|lettuce|greens|tomato|avocado|lemon|lime|basil|parsley|cilantro|ginger|cucumber|celery|apple)\b/i],
+      ["Meat & seafood", /\b(chicken|beef|turkey|pork|sausage|shrimp|salmon|fish|lamb|prosciutto)\b/i],
+      ["Dairy & eggs", /\b(egg|milk|cream|butter|cheese|parmesan|mozzarella|provolone|yogurt|feta)\b/i],
+      ["Bakery", /\b(bread|bun|roll|tortilla|flatbread|pita)\b/i],
+      ["Frozen", /\bfrozen\b/i]
+    ];
+    const canonicalIngredient = item => {
+      const cleaned = item.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim()
+        .replace(/^(fresh|large|small|medium|chopped|diced|sliced|minced)\s+/i, "");
+      const alias = aliases.find(([pattern]) => pattern.test(cleaned));
+      return alias ? alias[1] : cleaned;
+    };
+    const groceryCategory = item => categoryRules.find(([, pattern]) => pattern.test(item))?.[0] || "Cans & dry goods";
+    console.assert(pantryStock.some(pattern => pattern.test("olive oil")), "olive oil should be pantry stock");
+    console.assert(!pantryStock.some(pattern => pattern.test("Pepper Jack Cheese")), "pepper jack is not black pepper");
+    console.assert(canonicalIngredient("chopped onion") === "Onions", "onion variants should merge");
+    console.assert(groceryCategory("Chicken breasts") === "Meat & seafood", "chicken should be grouped as meat");
 
     function mealLink(recipe, label) {
       return `<a href="${root}${recipe.path}"><strong>${label}</strong><span>${recipe.title}</span></a>`;
@@ -107,9 +146,23 @@
         return `<article class="day-card"><h2>${day}</h2>${note}<div class="meal-slot">${lunch}</div><div class="meal-slot">${dinner}</div></article>`;
       }).join("");
 
-      const merged = [...new Set([...a.ingredients, ...b.ingredients])]
-        .sort((x, y) => x.localeCompare(y));
-      groceries.innerHTML = merged.map(item => `<li><label><input type="checkbox"> <span>${item}</span></label></li>`).join("");
+      const unique = new Map();
+      [...a.ingredients, ...b.ingredients]
+        .filter(item => !pantryStock.some(pattern => pattern.test(item.trim())))
+        .forEach(item => {
+          const label = canonicalIngredient(item);
+          unique.set(label.toLowerCase(), label);
+        });
+      const grouped = [...unique.values()].reduce((result, item) => {
+        (result[groceryCategory(item)] ||= []).push(item);
+        return result;
+      }, {});
+      groceries.innerHTML = ["Produce","Meat & seafood","Dairy & eggs","Bakery","Frozen","Cans & dry goods"]
+        .filter(category => grouped[category]?.length)
+        .map(category => `<section class="grocery-group"><h3>${category}</h3><ul>${
+          grouped[category].sort((x, y) => x.localeCompare(y))
+            .map(item => `<li><label><input type="checkbox"> <span>${item}</span></label></li>`).join("")
+        }</ul></section>`).join("");
     }
 
     const mealA = document.getElementById("meal-a");
