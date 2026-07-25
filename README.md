@@ -16,8 +16,8 @@ quantity-driven plans.
 - Sunday is the single grocery and prep day; lunch and dinner that day are
   takeout.
 - Two batches provide five weekday lunches and five weekday dinners.
-- Exactly two quick breakfasts alternate across the seven days, are made fresh
-  daily, and are shopped for on Sunday.
+- Exactly two quick breakfasts—one Easy and one Hard—alternate across the seven
+  days, are made fresh daily, and are shopped for on Sunday.
 - Every meal card opens its exact recipe at the quantity needed for one adult.
 - Pairing favours shared ingredients, while the second dish introduces the
   week's cooking technique.

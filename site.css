@@ -770,7 +770,8 @@ main img.rounded-xl {
   margin-top: auto;
   padding-top: .45rem;
   color: var(--muted);
-  font-size: .65rem;
+  font-size: .75rem;
+  line-height: 1.3;
 }
 
 .meal-link small b { color: var(--green); white-space: nowrap; }
@@ -789,7 +790,8 @@ main img.rounded-xl {
 .breakfast-slot strong {
   margin-bottom: .25rem;
   color: var(--green);
-  font-size: .65rem;
+  font-size: .75rem;
+  line-height: 1.3;
   letter-spacing: .025em;
   text-transform: uppercase;
 }
@@ -798,6 +800,11 @@ main img.rounded-xl {
 .meal-link:hover > span { text-decoration: underline; }
 .breakfast-slot { background: #f4efe7; }
 .breakfast-slot strong { color: #83552f; }
+.breakfast-hard {
+  border-left: 3px solid #83552f;
+  background: #eee8de;
+}
+.breakfast-hard strong { color: #6d3f27; }
 .breakfast-slot summary { cursor: pointer; list-style: none; }
 .breakfast-slot summary::-webkit-details-marker { display: none; }
 .breakfast-slot summary > span,
@@ -806,7 +813,8 @@ main img.rounded-xl {
   display: block;
   margin-top: .35rem;
   color: #83552f;
-  font-size: .68rem;
+  font-size: .75rem;
+  line-height: 1.3;
   font-weight: 750;
 }
 .breakfast-detail {
@@ -1042,6 +1050,19 @@ main img.rounded-xl {
   line-height: .98;
 }
 .breakfast-page > header > p:last-child { color: var(--muted); }
+.breakfast-difficulty {
+  display: inline-flex;
+  margin-top: .65rem;
+  padding: .28rem .55rem;
+  border-radius: 999px;
+  background: #e8efe7;
+  color: var(--green);
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.breakfast-difficulty.is-hard { background: #eee8de; color: #6d3f27; }
 .breakfast-back { width: max-content; }
 .breakfast-recipe-grid {
   display: grid;

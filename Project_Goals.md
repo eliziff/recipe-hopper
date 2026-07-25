@@ -20,8 +20,8 @@ large recipe collection into one practical weekly cooking routine.
   portions and freeze Wednesday through Friday portions on Sunday.
 - Alternate exactly two quick, easy breakfasts across the seven days and make
   each one fresh that morning.
-- Keep the two weekly breakfasts distinct Whey-protein smoothie-and-toast
-  options.
+- Pair one Easy smoothie-and-toast breakfast with one Hard cooked breakfast;
+  alternate them across the week.
 - Pair one easy recipe with one skill-building recipe and introduce one
   deliberate cooking technique each week.
 
