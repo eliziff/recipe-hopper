@@ -14,6 +14,10 @@ large recipe collection into one practical weekly cooking routine.
 - Cook two recipes on Sunday: one five-portion lunch and one five-portion
   dinner.
 - Eat those meals Monday through Friday; Saturday remains open.
+- Let every weekday meal open its exact recipe at one adult portion while
+  preserving a five-portion Sunday batch view.
+- Prefer meals that hold well after cooking; refrigerate Monday and Tuesday
+  portions and freeze Wednesday through Friday portions on Sunday.
 - Make one quick, easy breakfast fresh every day.
 - Include two distinct Whey-protein smoothie components in each week.
 - Pair one easy recipe with one skill-building recipe and introduce one
@@ -21,14 +25,17 @@ large recipe collection into one practical weekly cooking routine.
 
 ## Recipe library
 
-- Maintain 300 complete lunch or dinner dishes in a flat Cooklang collection.
-- Keep the 300-recipe catalogue focused on lunch and dinner; manage breakfast
+- Maintain the current 306 complete lunch or dinner dishes in a flat Cooklang
+  collection.
+- Keep the catalogue focused on lunch and dinner; manage breakfast
   through a small curated planner rotation.
 - Exclude tofu, desserts, standalone sauces, sides, condiments, incomplete
   recipes, and specialty or impractically expensive dishes.
 - Prefer ingredients available at ordinary Edmonton supermarkets and favour
   lower-cost staples.
-- Normalize every recipe to five portions.
+- Require a traceable numeric source yield and quantity-consistent directions
+  before a recipe can enter the planner; keep the rest available for browsing.
+- Scale every planned recipe to five portions with CookCLI.
 - Preserve the original source, author, and applicable licence metadata
   without organizing recipes by source.
 - Ingest recipes through a reusable cached adapter from multiple recipe sites
@@ -38,6 +45,12 @@ large recipe collection into one practical weekly cooking routine.
 
 - Produce one combined, deduplicated grocery list for the two weekly recipes
   and all seven breakfasts.
+- Show a measured quantity for every grocery item, summed from five lunches,
+  five dinners, and seven one-person breakfasts.
+- Choose lunch and dinner pairs programmatically to favour useful ingredient
+  overlap without repeating the week's cooking technique.
+- Carry durable bulk ingredients into later weeks and pre-check them when the
+  plan assumes stock remains.
 - Group ingredients by grocery aisle.
 - Persist checked items and allow the list to be copied or cleared.
 - Assume salt, sugar, flour, bread flour, water, mayonnaise, black pepper, and
@@ -48,7 +61,7 @@ large recipe collection into one practical weekly cooking routine.
 - Keep the interface concise, aligned, responsive, and free of promotional
   filler.
 - Use Tailwind CSS for the structural UI, with minimal custom styling.
-- Make browsing 300 recipes fast through search, filters, and progressive
+- Make browsing 306 recipes fast through search, filters, and progressive
   disclosure.
 - Do not expose recipe download buttons.
 - Use Cooklang as the data backbone; do not use Nyum or Pandoc.
@@ -57,4 +70,6 @@ large recipe collection into one practical weekly cooking routine.
 
 - Publish the static site through GitHub Pages from
   `eliziff/recipe-hopper`.
+- Build and deploy on every push to `main` with a GitHub Actions workflow that
+  downloads the latest official CookCLI Linux release.
 - Never deploy this project to Alberta Law Review infrastructure.

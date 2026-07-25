@@ -12,11 +12,12 @@ import json
 import random
 import re
 import shutil
+import subprocess
 import sys
 import time
 from fractions import Fraction
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).parent
@@ -97,6 +98,12 @@ DATASET = {
     "site": "GitHub · josephrmartinez/recipe-dataset",
 }
 
+VERIFIED_COOKLANG_REPOSITORY = {
+    "name": "GitHub · nicholaswilde/recipes",
+    "url": "https://github.com/nicholaswilde/recipes",
+    "license": "Apache-2.0",
+}
+
 CURRICULUM = {
     "Foolproof Pan Pizza": "dough-fermentation",
     "Chicken Pot Pie": "roux-making",
@@ -104,8 +111,8 @@ CURRICULUM = {
     "Chicken Parmesan": "breading-and-shallow-frying",
     "Speedy lentil coconut curry": "blooming-spices",
     "Sweet and Spicy Glazed Chicken Thighs": "pan-searing-and-glazing",
-    "Spiced chicken kebabs with chopped salad & flatbreads": "marinating-and-grilling",
-    "Kluski": "dumpling-shaping",
+    "Sausage ragu": "building-and-reducing-a-ragu",
+    "Gochujang Buttered Noodles": "emulsifying-a-pan-sauce",
 }
 
 UNITS = (
@@ -206,13 +213,17 @@ def image_url(value) -> str:
     return value if isinstance(value, str) else ""
 
 
-def serving_scale(value) -> Fraction:
+def serving_scale(value) -> Fraction | None:
     text = clean(value).lower()
+    if re.search(r"\d\s*(?:to|[-–—])\s*\d", text):
+        return None
     match = re.search(r"(\d+(?:\.\d+)?)\s*(?:to|-)?\s*\d*(?:\.\d+)?\s*servings?", text)
     if not match:
         match = re.search(r"(\d+(?:\.\d+)?)", text)
-    servings = Fraction(match.group(1)) if match else Fraction(4)
-    return Fraction(TARGET_SERVINGS, 1) / servings
+    if not match:
+        return None
+    servings = Fraction(match.group(1))
+    return Fraction(TARGET_SERVINGS, 1) / servings if servings else None
 
 
 def scaled_quantity(value: str, factor: Fraction) -> str:
@@ -229,7 +240,6 @@ def scaled_quantity(value: str, factor: Fraction) -> str:
             return None
 
     def display(number: Fraction) -> str:
-        number = Fraction(max(1, int(float(number) * 8 + .5)), 8)
         whole, remainder = divmod(number.numerator, number.denominator)
         if not remainder:
             return str(whole)
@@ -247,8 +257,9 @@ def scaled_quantity(value: str, factor: Fraction) -> str:
 
 def cook_ingredient(value: str, factor: Fraction = Fraction(1)) -> str:
     value = clean(value).replace("@", "")
+    amount = r"(?:\d+\s*[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?(?:\s+\d+/\d+)?|\d+/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])"
     match = re.match(
-        rf"^([\d¼½¾⅓⅔⅛⅜⅝⅞./–— -]+)\s*(?:({UNITS})\b)?\s+(.+)$",
+        rf"^({amount}(?:\s*(?:-|–|—|to)\s*{amount})?)\s*(?:({UNITS})\b\.?)?\s+(.+)$",
         value,
         re.I,
     )
@@ -261,8 +272,15 @@ def cook_ingredient(value: str, factor: Fraction = Fraction(1)) -> str:
 
 def self_check() -> None:
     assert serving_scale("4 servings") == Fraction(5, 4)
+    assert serving_scale("4 to 6 servings") is None
+    assert serving_scale(None) is None
     assert scaled_quantity("400", Fraction(5, 4)) == "500"
     assert scaled_quantity("1 1/2", Fraction(5, 4)) == "1 7/8"
+    assert scaled_quantity("1/2", Fraction(5, 6)) == "5/12"
+    assert cook_ingredient("2 to 3 cloves garlic", Fraction(5, 4)) == "@garlic{2 1/2-3 3/4%cloves}"
+    assert cook_ingredient("1 Tbsp. lemon juice", Fraction(5, 4)) == "@lemon juice{1 1/4%Tbsp}"
+    assert cook_ingredient("1½ lbs. chicken thighs", Fraction(5, 4)) == "@chicken thighs{1 7/8%lbs}"
+    assert cook_ingredient("1 ½ tbsp butter") == "@butter{1 1/2%tbsp}"
 
 
 def yaml(value) -> str:
@@ -420,10 +438,13 @@ def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
     filename = slug(title)
     total_time = clean(data.get("totalTime") or data.get("cookTime") or data.get("prepTime"))
     factor = serving_scale(data.get("recipeYield"))
+    yield_verified = factor is not None
     description = clean(data.get("description"))
     metadata = [
         "---",
         f"title: {yaml(title)}",
+        *( [f"servings: {TARGET_SERVINGS}"] if yield_verified else [] ),
+        f"yield_verified: {'true' if yield_verified else 'false'}",
         f"source: {yaml(url)}",
         f"author: {yaml(author(data.get('author')) or source_name)}",
         f"site: {yaml(source_name)}",
@@ -434,11 +455,8 @@ def make_cook(data: dict, source_name: str, url: str) -> tuple[str, str, str]:
     if data.get("license"):
         metadata.append(f"license: {yaml(data['license'])}")
     metadata.extend(["---", ""])
-    pantry = "\\\n".join(cook_ingredient(item, factor) for item in ingredients)
-    details = " · ".join(filter(None, (
-        f"Servings: {TARGET_SERVINGS}",
-        f"Time: {total_time}" if total_time else "",
-    )))
+    pantry = "\\\n".join(cook_ingredient(item, factor or Fraction(1)) for item in ingredients)
+    details = f"Time: {total_time}" if total_time else ""
     notes = [f"> {details}", ""] if details else []
     body = metadata + notes + ["= Ingredients", "", pantry, "", "= Directions", ""]
     return filename, "\n".join(body) + "\n\n".join(steps) + "\n", image_url(data.get("image"))
@@ -502,6 +520,163 @@ def import_dataset(output: Path, count: int, rng: random.Random, refresh: bool) 
     return written
 
 
+def metadata_value(recipe: str, key: str) -> str:
+    match = re.search(rf"^(?:>>\s*)?{re.escape(key)}:\s*(.+?)\s*$", recipe, re.M | re.I)
+    return clean(match.group(1)).strip("\"'") if match else ""
+
+
+def exact_servings(recipe: str) -> Fraction | None:
+    value = metadata_value(recipe, "servings")
+    match = re.fullmatch(r"(\d+(?:\.\d+)?)\s*(?:servings?)?", value, re.I)
+    return Fraction(match.group(1)) if match else None
+
+
+def verified_repository_dish(path: Path, recipe: str) -> bool:
+    relative = path.as_posix().lower()
+    title = metadata_value(recipe, "title") or path.stem
+    meal_folder = any(folder in relative for folder in (
+        "/main/", "/soups-and-stews/", "/mediterranean/",
+    ))
+    component_title = re.search(
+        r"\b(sauce|dressing|marmalade|bread|rolls?|buns?|cookies?|cake|"
+        r"dessert|salad|gazpacho)\b",
+        title,
+        re.I,
+    )
+    excluded_ingredient = re.search(
+        r"\b(tofu|red wine|white wine|brandy|vodka|beer)\b",
+        recipe,
+        re.I,
+    )
+    return (
+        meal_folder
+        and exact_servings(recipe) is not None
+        and not component_title
+        and not excluded_ingredient
+        and recipe.count("@") >= 5
+    )
+
+
+def import_verified_repository(
+    output: Path,
+    repository: Path,
+    cook: str,
+    count: int,
+    rng: random.Random,
+) -> int:
+    candidates = []
+    for path in repository.rglob("*.cook"):
+        recipe = path.read_text(encoding="utf-8")
+        if verified_repository_dish(path, recipe):
+            candidates.append((path, recipe))
+    rng.shuffle(candidates)
+    written = 0
+    for path, recipe in candidates:
+        if written >= count:
+            break
+        title = metadata_value(recipe, "title") or path.stem
+        servings = exact_servings(recipe)
+        result = subprocess.run(
+            [
+                cook, "recipe", str(path), "--format", "cooklang",
+                "--scale", str(float(Fraction(TARGET_SERVINGS, 1) / servings)),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        body = re.sub(
+            r"\A---\s*\n.*?\n---\s*\n",
+            "",
+            result.stdout,
+            count=1,
+            flags=re.S,
+        ).lstrip()
+        body = body.replace(
+            "@salt and @pepper",
+            "@salt{} and @black pepper{}",
+        ).replace(
+            "@cilantro or @scallions (if using)",
+            "@cilantro (optional){} or @scallions (optional){}",
+        )
+        relative = path.relative_to(repository).as_posix()
+        blob_url = (
+            f"{VERIFIED_COOKLANG_REPOSITORY['url']}/blob/main/"
+            f"{quote(relative, safe='/')}"
+        )
+        metadata = [
+            "---",
+            f"title: {yaml(title)}",
+            f"servings: {TARGET_SERVINGS}",
+            "yield_verified: true",
+            f"source: {yaml(metadata_value(recipe, 'source') or blob_url)}",
+            f"repository: {yaml(blob_url)}",
+            f"author: {yaml(metadata_value(recipe, 'author') or 'nicholaswilde/recipes contributors')}",
+            f"site: {yaml(VERIFIED_COOKLANG_REPOSITORY['name'])}",
+            f"tags: {json.dumps(learning_tags({'name': title}))}",
+            f"license: {yaml(VERIFIED_COOKLANG_REPOSITORY['license'])}",
+            "---",
+            "",
+        ]
+        (output / f"{slug(title)}.cook").write_text(
+            "\n".join(metadata) + body,
+            encoding="utf-8",
+        )
+        print(f"{VERIFIED_COOKLANG_REPOSITORY['name']}: {title}")
+        written += 1
+    print(f"{VERIFIED_COOKLANG_REPOSITORY['name']}: {written} verified-yield dishes")
+    return written
+
+
+def refresh_existing_verified(output: Path, refresh: bool) -> int:
+    written = 0
+    for path in sorted(output.glob("*.cook")):
+        recipe = path.read_text(encoding="utf-8")
+        if metadata_value(recipe, "planner_ready").lower() == "true":
+            print(f"Preserved curated planner recipe: {path.name}")
+            continue
+        site = metadata_value(recipe, "site")
+        source = metadata_value(recipe, "source")
+        if (
+            "josephrmartinez/recipe-dataset" in source
+            or "github.com/justintout/recipes" in source
+        ):
+            recipe = re.sub(r"^servings:\s*.+\n", "", recipe, count=1, flags=re.M)
+            if "yield_verified:" not in recipe:
+                recipe = re.sub(
+                    r"(^title:\s*.+\n)",
+                    r"\1yield_verified: false\n",
+                    recipe,
+                    count=1,
+                    flags=re.M,
+                )
+            if path.stem == "kluski":
+                recipe = re.sub(
+                    r'^tags:\s*.+$',
+                    'tags: ["approachable"]',
+                    recipe,
+                    count=1,
+                    flags=re.M,
+                )
+            path.write_text(recipe, encoding="utf-8")
+            continue
+        if (
+            not source.startswith("http")
+            or site == VERIFIED_COOKLANG_REPOSITORY["name"]
+        ):
+            continue
+        data = parse_recipe(fetch(source, refresh))
+        _, converted, _ = make_cook(data, site or urlparse(source).netloc, source)
+        if "yield_verified: true" not in converted:
+            print(f"Unverified yield, left catalogue-only: {path.name}")
+            continue
+        path.write_text(converted, encoding="utf-8")
+        print(f"Refreshed verified yield: {path.name}")
+        written += 1
+    return written
+
+
 def main() -> int:
     self_check()
     if hasattr(sys.stdout, "reconfigure"):
@@ -512,9 +687,28 @@ def main() -> int:
     parser.add_argument("--refresh", action="store_true")
     parser.add_argument("--replace", action="store_true", help="replace the flat collection")
     parser.add_argument("--github-count", type=int, default=283)
+    parser.add_argument("--cook", default="cook")
+    parser.add_argument("--refresh-existing-verified", action="store_true")
+    parser.add_argument("--verified-repo", type=Path)
+    parser.add_argument("--verified-count", type=int, default=20)
     args = parser.parse_args()
     rng = random.Random(args.seed)
     output = ROOT / "recipes"
+    if args.refresh_existing_verified or args.verified_repo:
+        output.mkdir(parents=True, exist_ok=True)
+        written = 0
+        if args.refresh_existing_verified:
+            written += refresh_existing_verified(output, args.refresh)
+        if args.verified_repo:
+            written += import_verified_repository(
+                output,
+                args.verified_repo.resolve(),
+                args.cook,
+                args.verified_count,
+                rng,
+            )
+        print(f"Verified recipe updates: {written}")
+        return 0
     if args.replace and output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True, exist_ok=True)
@@ -554,6 +748,7 @@ def main() -> int:
             metadata = "\n".join([
                 "---",
                 f"title: {yaml(item['title'])}",
+                "yield_verified: false",
                 f"source: {yaml(item['url'])}",
                 f"author: {yaml(item['author'])}",
                 'site: "GitHub · justintout/recipes"',
@@ -562,8 +757,7 @@ def main() -> int:
                 "",
             ])
             (output / f"{slug(item['title'])}.cook").write_text(
-                metadata + f"> Servings: {TARGET_SERVINGS}\n\n" +
-                fetch(item["raw"], args.refresh).strip() + "\n",
+                metadata + fetch(item["raw"], args.refresh).strip() + "\n",
                 encoding="utf-8",
             )
             print(f"GitHub · justintout/recipes: {item['title']}")
