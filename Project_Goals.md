@@ -53,10 +53,13 @@ large recipe collection into one practical weekly cooking routine.
   and all seven breakfasts.
 - Show a measured quantity for every grocery item, summed from five lunches,
   five dinners, and seven one-person breakfasts.
-- Choose lunch and dinner pairs programmatically to favour useful ingredient
-  overlap while preserving scheduled technique reviews.
-- Carry durable bulk ingredients into later weeks and pre-check them when the
-  plan assumes stock remains.
+- Place lunches programmatically to favour a capped amount of same-week and
+  nearby-week ingredient overlap while preserving every scheduled dinner and
+  technique review.
+- Model common Canadian package sizes and short storage windows so lunch
+  placement reduces stranded specialty ingredients.
+- Carry durable bulk ingredients and sufficient modeled package leftovers into
+  later weeks; pre-check only when the assumed stock covers the full need.
 - Group ingredients by grocery aisle.
 - Persist checked items and allow the list to be copied or cleared.
 - Assume salt, sugar, flour, bread flour, water, mayonnaise, black pepper, and

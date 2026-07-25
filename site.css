@@ -467,13 +467,14 @@ main img.rounded-xl {
 
 .cycle-progress {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: 2.65rem minmax(8rem, 1fr) 2.65rem;
   gap: .5rem;
-  width: min(100%, 46rem);
+  width: min(100%, 20rem);
   margin-top: 1rem;
 }
 
-.cycle-progress button {
+.cycle-progress button,
+.cycle-progress select {
   width: 100%;
   min-width: 0;
   height: 2.65rem;
@@ -483,18 +484,31 @@ main img.rounded-xl {
   color: var(--muted);
   font-size: .8rem;
   font-weight: 800;
+}
+
+.cycle-progress button {
   cursor: pointer;
 }
 
-.cycle-progress button:hover {
+.cycle-progress select {
+  padding: 0 .75rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cycle-progress button:not(:disabled):hover {
   border-color: var(--green);
   color: var(--green);
 }
 
-.cycle-progress button.is-current {
-  border-color: var(--green);
-  background: var(--green);
-  color: white;
+.cycle-progress button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.cycle-progress :focus-visible {
+  outline: 3px solid rgb(69 98 75 / 24%);
+  outline-offset: 2px;
 }
 
 .eyebrow {
@@ -1200,10 +1214,8 @@ main img.rounded-xl {
   .catalogue-toolbar { align-items: flex-start; flex-direction: column; }
   .catalogue-status { order: -1; }
   .cycle-progress {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     width: 100%;
   }
-  .cycle-progress button { font-size: .76rem; }
   main img.rounded-xl { aspect-ratio: 4 / 3; }
   .ingredient-badge { display: inline; }
 }
