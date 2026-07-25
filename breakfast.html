@@ -12,6 +12,7 @@
     <a class="portion-back breakfast-back" id="back" href="/recipe-hopper/planner.html">← Back to weekly plan</a>
     <header>
       <p class="eyebrow" id="day">Breakfast · 1 adult portion</p>
+      <span class="breakfast-difficulty" id="difficulty">Easy</span>
       <h1 id="title"></h1>
       <p>Cook fresh in the morning. These quantities feed one adult.</p>
     </header>
@@ -44,7 +45,10 @@
       document.title = `${breakfast.meal} · Recipe Hopper`;
       document.getElementById("back").href = `/recipe-hopper/planner.html?week=${week}`;
       document.getElementById("back").textContent = `← Back to Week ${week}`;
-      document.getElementById("day").textContent = `${days[dayIndex]} breakfast · 1 adult portion`;
+      document.getElementById("day").textContent = `${days[dayIndex]} breakfast · ${breakfast.difficulty} · 1 adult portion`;
+      const difficulty = document.getElementById("difficulty");
+      difficulty.textContent = breakfast.difficulty;
+      difficulty.classList.toggle("is-hard", breakfast.difficulty === "Hard");
       document.getElementById("title").textContent = breakfast.meal;
       document.getElementById("ingredients").innerHTML = breakfast.ingredients.map(ingredient =>
         `<li><span>${escapeHTML(ingredientLabel(ingredient[0]))}</span><strong>${number(ingredient[1])}${ingredient[2] ? ` ${escapeHTML(ingredient[2])}` : ""}</strong></li>`

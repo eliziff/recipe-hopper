@@ -549,8 +549,9 @@
       const query = new URLSearchParams({
         week: String(cycleWeek), day: String(dayIndex), plan: plan.id
       });
-      return `<a class="meal-slot breakfast-slot meal-link breakfast-link" href="${root}breakfast.html?${query}">
-        <strong>Breakfast · 1 adult portion</strong>
+      const level = breakfast.difficulty || "Easy";
+      return `<a class="meal-slot breakfast-slot breakfast-${level.toLowerCase()} meal-link breakfast-link" href="${root}breakfast.html?${query}">
+        <strong>Breakfast · ${level} · 1 adult portion</strong>
         <span>${escapeHTML(breakfast.meal)}</span>
         <small><span>Cook fresh</span><b>View recipe →</b></small>
       </a>`;
@@ -620,7 +621,11 @@
       const days = breakfastsFor(plan);
       return days.length === 7
         && new Set(days.map(day => day.meal)).size === 2
-        && days.every((day, index) => !index || day.meal !== days[index - 1].meal);
+        && days.every((day, index) => !index || day.meal !== days[index - 1].meal)
+        && plan.first.difficulty === "Easy"
+        && plan.second.difficulty === "Hard"
+        && plan.first.meal.includes("smoothie")
+        && !plan.second.meal.includes("smoothie");
     }), "each week should alternate exactly two breakfasts");
     console.assert(groceryCategory("Chicken breasts") === "Meat & seafood", "chicken should be grouped as meat");
     console.assert(groceryCategory("Carrots") === "Produce", "plural produce should stay in produce");
@@ -792,7 +797,11 @@
         return `<button type="button" data-week="${number}" ${number === cycleWeek ? 'class="is-current" aria-current="step"' : ""}>Week ${number}</button>`;
       }).join("");
       cycleProgress.querySelectorAll("button").forEach(button =>
-        button.addEventListener("click", () => loadWeek(button.dataset.week))
+        button.addEventListener("click", () => {
+          const week = button.dataset.week;
+          loadWeek(week);
+          cycleProgress.querySelector(`[data-week="${week}"]`)?.focus();
+        })
       );
     }
 
