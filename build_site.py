@@ -277,7 +277,10 @@ def scaled_ingredients(path):
 
 
 search_path = SITE / "static/search-index.json"
-search_index = json.loads(search_path.read_text(encoding="utf-8"))
+search_index = sorted(
+    json.loads(search_path.read_text(encoding="utf-8")),
+    key=lambda recipe: recipe["path"],
+)
 portion_by_path = {}
 for recipe in search_index:
     page = SITE / recipe["path"]
