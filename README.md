@@ -23,9 +23,11 @@ quantity-driven plans.
 - Every meal card opens its exact recipe at the quantity needed for one adult.
 - Five explicitly tagged complex techniques return on widening review
   intervals; routine dishes and simple breakfasts never enter the review queue.
-- Lunch pairing is generated from cost, ingredient overlap, and recent use.
-- The grocery list sums and deduplicates recipe quantities by aisle. Durable
-  bulk ingredients from earlier weeks are carried forward and pre-checked.
+- Lunch placement balances cost, same-week and nearby-week ingredient overlap,
+  and modeled package waste without moving a scheduled dinner.
+- The grocery list normalizes, sums, and deduplicates recipe quantities by
+  aisle. Durable bulk stock and sufficient modeled package leftovers are
+  carried forward and pre-checked.
 - Later-week portions are selected for freezer and reheating suitability.
 
 The review ladder uses widening target gaps and defers collisions to the next

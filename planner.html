@@ -12,15 +12,22 @@
   <main class="planner-shell mx-auto px-4">
     <header class="planner-header">
       <a href="./">← Recipe library</a>
-      <p class="eyebrow" id="cycle">Choose a week · 1 of 32</p>
+      <p class="eyebrow" id="cycle" aria-live="polite">Week 1 of 32</p>
       <h1>Weekly plan</h1>
-      <nav class="cycle-progress" id="cycle-progress" aria-label="Choose a week"></nav>
+      <nav class="cycle-progress" id="cycle-progress" aria-label="Choose a week">
+        <button id="previous-week" type="button" aria-label="Previous week" aria-controls="week">&larr;</button>
+        <label>
+          <span class="sr-only">Week</span>
+          <select id="week-select" aria-controls="week"></select>
+        </label>
+        <button id="next-week" type="button" aria-label="Next week" aria-controls="week">&rarr;</button>
+      </nav>
     </header>
 
     <section class="planner-controls grid gap-4 bg-white border border-gray-200 rounded-xl" aria-label="Plan settings">
       <label><span>Breakfast rotation</span><select id="breakfast-plan"></select></label>
-      <label><span>Easy · freezer-friendly</span><select id="meal-a"></select></label>
-      <label><span>Dinner · freezer-friendly</span><select id="meal-b"></select></label>
+      <label><span>Lunch</span><select id="meal-a"></select></label>
+      <label><span>Dinner</span><select id="meal-b"></select></label>
       <button class="reroll-button" id="reroll" type="button">Swap lunch</button>
     </section>
 
@@ -56,7 +63,7 @@
           <p class="eyebrow">Sunday · one trip</p>
           <h2>Grocery list</h2>
           <p class="grocery-scope">Exact totals for 5 lunches, 5 dinners and 7 one-person breakfasts.</p>
-          <p class="pantry-note">On hand: salt, sugar, flour, bread flour, water, mayonnaise, black pepper and cooking oils.</p>
+          <p class="pantry-note">On hand: salt, sugar, flour, bread flour, water, mayonnaise, black pepper and cooking oils. Freeze opened sauces and canned leftovers before carrying them into another week.</p>
         </div>
         <div class="grocery-meta">
         <p class="grocery-progress" id="grocery-progress" aria-live="polite"></p>
@@ -90,6 +97,7 @@
     let stretch = [];
     let dinners = [];
     let defaultSchedule = [];
+    let scheduleOptimization = {};
     let checked = new Set();
     let carryoverDismissed = new Set();
     let latestGroceries = [];
@@ -102,6 +110,10 @@
       lesson: breakfastLesson,
       method: breakfastMethod
     } = window.RECIPE_HOPPER_BREAKFASTS;
+    const defaultBreakfastPlans = Array.from(
+      {length: WEEK_COUNT},
+      (_, index) => breakfastForWeek(index + 1)
+    );
     const techniqueLessons = {
       "blooming spices": {
         principle: "Heating spices briefly in fat dissolves their aromatic compounds into the oil, so the flavour is carried through the entire curry.",
@@ -275,18 +287,23 @@
       [/\b(?:green onions?|scallions?|spring onions?)\b/i, "Green onions"],
       [/\bonion powder\b/i, "Onion powder"],
       [/\bred onions?\b/i, "Red onions"],
-      [/\byellow onions?\b/i, "Yellow onions"],
-      [/\bwhite onions?\b/i, "White onions"],
+      [/\b(?:yellow|white|vidalia|sweet) onions?\b/i, "Onions"],
       [/\bonions?\b/i, "Onions"],
       [/\bgarlic powder\b/i, "Garlic powder"],
       [/\bgarlic\b/i, "Garlic"],
-      [/\bsweet potatoes?\b/i, "Sweet potatoes"],
-      [/\byukon gold potatoes?\b/i, "Yukon Gold potatoes"],
-      [/\brusset potatoes?\b/i, "Russet potatoes"],
-      [/\bpotatoes?\b/i, "Potatoes"],
+      [/\bsweet potato(?:es)?\b/i, "Sweet potatoes"],
+      [/\byukon gold potato(?:es)?\b/i, "Yukon Gold potatoes"],
+      [/\brusset potato(?:es)?\b/i, "Russet potatoes"],
+      [/\bpotato(?:es)?\b/i, "Potatoes"],
       [/\bcarrots?\b/i, "Carrots"],
-      [/\b(?:canned|chopped|crushed|diced|petite diced|whole peeled)\s+tomatoes?\b/i, "Canned tomatoes"],
-      [/\btomatoes?\b/i, "Tomatoes"],
+      [/\bpizza sauce\b/i, "Pizza sauce"],
+      [/\bcanned tomato sauce\b/i, "Canned tomato sauce"],
+      [/\b(?:prepared tomato sauce|pasta sauce)\b/i, "Pasta sauce"],
+      [/\btomato paste\b/i, "Tomato paste"],
+      [/\b(?:(?:canned|fire[- ]roasted|chopped|crushed|diced|petite[- ]diced|whole[- ]peeled)\s+)+tomato(?:es)?\b/i, "Canned tomatoes"],
+      [/\btomato(?:es)?\b/i, "Tomatoes"],
+      [/\b(?:can(?:ned)? )?(?:cooked )?green lentils?\b/i, "Canned green lentils"],
+      [/\b(?:can(?:ned)? )?chickpeas?\b/i, "Canned chickpeas"],
       [/\bground ginger\b/i, "Ground ginger"],
       [/\bginger\b/i, "Fresh ginger"],
       [/\bground coriander\b/i, "Ground coriander"],
@@ -303,11 +320,27 @@
       [/\bcauliflower\b/i, "Cauliflower"],
       [/\bgreen beans?\b/i, "Green beans"],
       [/\basparagus\b/i, "Asparagus"],
+      [/\bleeks?\b/i, "Leeks"],
+      [/\bmixed mushrooms?\b/i, "Mixed mushrooms"],
+      [/\b(?:(?:button|cremini|white|brown)\s+)?mushrooms?\b/i, "Mushrooms"],
+      [/\bfrozen (?:green )?peas\b/i, "Frozen peas"],
+      [/\bdried basil(?: leaves)?\b/i, "Dried basil"],
+      [/\bdried oregano\b/i, "Dried oregano"],
+      [/\bfresh basil\b/i, "Fresh basil"],
+      [/\b(?:fresh )?parsley(?: leaves)?\b/i, "Fresh parsley"],
+      [/\brosemary sprigs?\b/i, "Fresh rosemary"],
+      [/\bfresh herbs?\b/i, "Fresh herbs"],
+      [/\bcrushed red pepper\b/i, "Chilli flakes"],
+      [/\bjar(?:red)? roasted red peppers?\b/i, "Jarred roasted red peppers"],
+      [/\bgreen chiles?\b/i, "Canned green chillies"],
+      [/\blemon (?:zest|zested)\b/i, "Lemons"],
       [/\bcoconut milk\b/i, "Coconut milk"],
       [/\b(?:cooked )?brown rice\b/i, "Brown rice"],
       [/\b(?:cooked |steamed )?(?:white )?rice\b(?!\s+(?:vinegar|noodles?))/i, "Rice"],
       [/\b(?:plain )?greek yogurt\b/i, "Greek yogurt"],
       [/\b(?:whole|skim|2%|1%|full-fat|low-fat)?\s*milk\b/i, "Milk"],
+      [/\bpeanut butter\b/i, "Peanut butter"],
+      [/\b(?<!peanut )(?<!almond )(?:(?:un)?salted )?butter\b/i, "Unsalted butter"],
       [/\bcurry powder\b/i, "Curry powder"],
       [/\bturmeric\b/i, "Turmeric"],
       [/^(large )?eggs?(?:,.*)?$/i, "Eggs"],
@@ -315,28 +348,44 @@
       [/\bchicken thighs?\b/i, "Chicken thighs"],
       [/\bground beef\b/i, "Ground beef"],
       [/\bparmesan\b/i, "Parmesan"],
+      [/\bfresh mozzarella\b/i, "Fresh mozzarella"],
       [/\bmozzarella\b/i, "Mozzarella"],
+      [/\bcream cheese\b/i, "Cream cheese"],
+      [/\bfeta(?: cheese)?\b/i, "Feta"],
+      [/\bprovolone(?: cheese)?\b/i, "Provolone"],
+      [/\bricotta(?: cheese)?\b/i, "Ricotta"],
+      [/\bsour cream\b/i, "Sour cream"],
       [/\b(?:white |sharp |mature )?(?:shredded |grated )?cheddar(?: cheese)?\b/i, "Cheddar"],
+      [/\bpanko bread crumbs?\b/i, "Panko breadcrumbs"],
+      [/\bpacket taco seasoning\b/i, "Taco seasoning"],
+      [/\binstant yeast\b/i, "Instant yeast"],
+      [/\bspaghetti or other long pasta\b/i, "Spaghetti"],
+      [/\bsherry vinegar or rice vinegar\b/i, "Rice vinegar"],
+      [/\bchicken or vegetable stock\b/i, "Low-sodium vegetable broth"],
+      [/\b(?:low-sodium )?vegetable (?:stock|broth)\b/i, "Low-sodium vegetable broth"],
+      [/\b(?:sweet Italian sausage|pork sausages?)\b/i, "Italian sausage"],
+      [/\bground turkey\b/i, "Ground turkey"],
       [/\b(?:corn |flour )?taco shells?\b/i, "Taco shells"]
     ];
     const categoryRules = [
-      ["Frozen", /\bfrozen\b/i],
-      ["Cans & dry goods", /\b(ground ginger|broth|stock|bouillon|stock concentrate|canned tomatoes?|tomato paste|dried (?:basil|parsley|thyme|rosemary|dill|oregano))\b/i],
-      ["Produce", /\b(onions?|garlic|potatoes?|carrots?|broccoli|cauliflower|asparagus|green beans?|mushrooms?|zucchini|bell peppers?|green peppers?|red peppers?|yellow peppers?|orange peppers?|poblano|jalapeño|jalapeno|corn|spinach|lettuce|greens|tomatoes?|avocado|lemons?|limes?|basil|parsley|cilantro|thyme|rosemary|dill|ginger|chillies|cucumbers?|celery|apples?|bananas?|berries|mango|peaches?|pineapple|cherries)\b/i],
+      ["Frozen", /\b(frozen|unbaked pie crusts?)\b/i],
+      ["Cans & dry goods", /\b(ground ginger|broth|stock|bouillon|stock concentrate|canned|tomato paste|(?:pasta|pizza) sauce|jarred|dried (?:basil|parsley|thyme|rosemary|dill|oregano))\b/i],
+      ["Produce", /\b(onions?|garlic|potato(?:es)?|carrots?|broccoli|cauliflower|asparagus|green beans?|mushrooms?|zucchini|bell peppers?|green peppers?|red peppers?|yellow peppers?|orange peppers?|poblano|jalapeño|jalapeno|corn|spinach|lettuce|greens|fresh herbs?|leeks?|tomato(?:es)?|avocado|lemons?|limes?|basil|parsley|cilantro|thyme|rosemary|dill|ginger|chillies|cucumbers?|celery|apples?|bananas?|berries|mango|peaches?|pineapple|cherries)\b/i],
       ["Meat & seafood", /\b(chicken|beef|turkey|pork|sausage|shrimp|salmon|fish|lamb|prosciutto)\b/i],
-      ["Dairy & eggs", /\b(eggs?|(?<!coconut )milk|cream|(?<!peanut )(?<!almond )butter|cheese|cheddar|parmesan|mozzarella|provolone|yogurt|feta)\b/i],
+      ["Dairy & eggs", /\b(eggs?|(?<!coconut )milk|cream|(?<!peanut )(?<!almond )butter|cheese|cheddar|parmesan|mozzarella|provolone|ricotta|yogurt|feta)\b/i],
       ["Bakery", /\b(bread|buns?|rolls?|tortillas?|flatbreads?|pitas?|taco shells?)\b/i]
     ];
     const canonicalIngredient = item => {
       const cleaned = item.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim()
         .replace(/^to\s+\d+(?:\s+\d+\/\d+)?\s+(?:(?:ounces?|oz|pounds?|lbs?|cups?|teaspoons?|tsp|tablespoons?|tbsp)\s+)?/i, "")
         .replace(/^x?\s*\d+(?:\.\d+)?\s*(?:g|kg|ml|l|oz|ounces?|lb|pounds?)?\s*cans?\s+/i, "")
-        .replace(/^(?:cans?|packages?|heads?)\s+/i, "")
+        .replace(/^(?:cans?|packages?|heads?)\s+/i, "");
+      const alias = aliases.find(([pattern]) => pattern.test(item) || pattern.test(cleaned));
+      return alias ? alias[1] : cleaned
         .replace(/^(fresh|large|small|medium|chopped|diced|sliced|minced)\s+/i, "");
-      const alias = aliases.find(([pattern]) => pattern.test(cleaned));
-      return alias ? alias[1] : cleaned;
     };
     const groceryCategory = item => categoryRules.find(([, pattern]) => pattern.test(item))?.[0] || "Cans & dry goods";
+    const bulkAisle = item => /^(?:Eggs|Milk)$/i.test(item) || Boolean(carryoverKey(item));
     const equipmentIngredient = /\b(equipment|thermometer|twine|slicer|spice mill|mortar|pestle|baking dish|roasting pan|grill sheet|skillet|saucepan|frying pan|sheet pan|paper towels?|toothpicks?|rack)\b/i;
     const optionalIngredient = /\b(optional|as desired|ingredient info|cooks? notes?)\b/i;
     const freezerStaple = /\b(soup|stew|chili|curry|masala|tagine|lasagna|bolognese|ragu|ragout|casserole|meatloaf|meatballs|pot pie|shepherd|braised|beans|lentil|dal|rice|congee|gumbo|posole|pozole|pasta|noodles|orzo|gnocchi|dumpling|parmesan|chicken thighs|roast chicken|pulled|enchilada|empanada|fried rice|gratin)\b/i;
@@ -352,22 +401,193 @@
         || equipmentIngredient.test(ingredient.name)
         || optionalIngredient.test(ingredient.name)
       );
-    const ingredientKey = name => canonicalIngredient(name).toLowerCase();
-    const recipeIngredientKeys = recipe => new Set(recipe.ingredientDetails
+    const planningIngredientKey = name => {
+      const key = canonicalIngredient(name).toLowerCase();
+      return /^(?:peppadew peppers in brine|jarred roasted red peppers)$/.test(key)
+        ? "jarred peppers"
+        : key;
+    };
+    const recipeKeyCache = new WeakMap();
+    const recipeIngredientKeys = recipe => {
+      if (recipeKeyCache.has(recipe)) return recipeKeyCache.get(recipe);
+      const keys = new Set(recipe.ingredientDetails
       .filter(ingredient =>
         !isPantry(ingredient.name)
         && !equipmentIngredient.test(ingredient.name)
         && !(optionalIngredient.test(ingredient.name) && !Number.isFinite(ingredient.value))
       )
-      .map(ingredient => ingredientKey(ingredient.name))
+      .map(ingredient => planningIngredientKey(ingredient.name))
       .filter(Boolean));
-    const overlapScore = (first, second) => {
-      const firstKeys = recipeIngredientKeys(first);
-      return [...recipeIngredientKeys(second)].reduce((score, key) => {
-        if (!firstKeys.has(key)) return score;
-        const category = groceryCategory(key);
-        return score + (category === "Produce" || category === "Dairy & eggs" ? 3 : 1);
-      }, 0);
+      recipeKeyCache.set(recipe, keys);
+      return keys;
+    };
+    const breakfastKeyCache = new WeakMap();
+    const breakfastIngredientKeys = plan => {
+      if (breakfastKeyCache.has(plan)) return breakfastKeyCache.get(plan);
+      const keys = new Set(breakfastsFor(plan).flatMap(day => day.ingredients)
+        .filter(([name]) => !isPantry(name))
+        .map(([name]) => planningIngredientKey(name))
+        .filter(Boolean));
+      breakfastKeyCache.set(plan, keys);
+      return keys;
+    };
+    const overlapWeight = key => {
+      if (/^(?:eggs|milk|whey protein powder|whole-grain bread)$/.test(key)) return 0;
+      if (/^(?:jarred peppers|ricotta|cream cheese|coconut milk)$/.test(key)) return 4;
+      const category = groceryCategory(key);
+      if (category === "Produce" || category === "Dairy & eggs") return 3;
+      if (category === "Meat & seafood" || category === "Frozen" || category === "Cans & dry goods") return 2;
+      return 1;
+    };
+    const cappedOverlap = (firstKeys, secondKeys) => [...firstKeys]
+      .filter(key => secondKeys.has(key))
+      .map(overlapWeight)
+      .filter(Boolean)
+      .sort((a, b) => b - a)
+      .slice(0, 2)
+      .reduce((total, weight) => total + weight, 0);
+    const overlapScore = (first, second) =>
+      cappedOverlap(recipeIngredientKeys(first), recipeIngredientKeys(second));
+    const weekIngredientKeys = (selection, index) => new Set([
+      ...recipeIngredientKeys(selection.a),
+      ...recipeIngredientKeys(selection.b),
+      ...breakfastIngredientKeys(selection.breakfast || defaultBreakfastPlans[index])
+    ]);
+    const sameWeekOverlap = (selection, index) => {
+      const breakfast = selection.breakfast || defaultBreakfastPlans[index];
+      return 4 * cappedOverlap(recipeIngredientKeys(selection.a), recipeIngredientKeys(selection.b))
+        + 3 * cappedOverlap(recipeIngredientKeys(selection.a), breakfastIngredientKeys(breakfast));
+    };
+    const scheduleOverlapScore = schedule => {
+      const keys = schedule.map(weekIngredientKeys);
+      return schedule.reduce((score, selection, index) => score
+        + sameWeekOverlap(selection, index)
+        + (keys[index + 1] ? 2 * cappedOverlap(keys[index], keys[index + 1]) : 0)
+        + (keys[index + 2] ? cappedOverlap(keys[index], keys[index + 2]) : 0)
+      , 0);
+    };
+    const overlapLookupFor = schedule => {
+      const lunches = easy.map(([recipe]) => recipe);
+      const lunchIndex = new Map(lunches.map((recipe, index) => [recipe.path, index]));
+      const sameWeek = schedule.map((selection, week) => lunches.map(a =>
+        sameWeekOverlap({...selection, a}, week)
+      ));
+      const weekKeys = schedule.map((selection, week) => lunches.map(a =>
+        weekIngredientKeys({...selection, a}, week)
+      ));
+      const nearby = schedule.map(() => []);
+      for (let left = 0; left < schedule.length; left += 1) {
+        for (let distance = 1; distance <= 2 && left + distance < schedule.length; distance += 1) {
+          nearby[left][distance] = lunches.flatMap((_, leftLunch) =>
+            lunches.map((__, rightLunch) =>
+              (distance === 1 ? 2 : 1) * cappedOverlap(
+                weekKeys[left][leftLunch],
+                weekKeys[left + distance][rightLunch]
+              )
+            )
+          );
+        }
+      }
+      return changed => {
+        const indices = [...new Set(changed)];
+        const pairs = new Set();
+        indices.forEach(index => {
+          for (let distance = 1; distance <= 2; distance += 1) {
+            if (index - distance >= 0) pairs.add((index - distance) * WEEK_COUNT + index);
+            if (index + distance < schedule.length) pairs.add(index * WEEK_COUNT + index + distance);
+          }
+        });
+        return indices.reduce((score, week) =>
+          score + sameWeek[week][lunchIndex.get(schedule[week].a.path)]
+        , 0) + [...pairs].reduce((score, pair) => {
+          const left = Math.floor(pair / WEEK_COUNT);
+          const right = pair % WEEK_COUNT;
+          const index = lunchIndex.get(schedule[left].a.path) * lunches.length
+            + lunchIndex.get(schedule[right].a.path);
+          return score + nearby[left][right - left][index];
+        }, 0);
+      };
+    };
+    const scheduleFitScore = schedule => scheduleOverlapScore(schedule) - 5 * packageWasteScore(schedule);
+    const validLunchSchedule = schedule => schedule.every(({a, b}, index) =>
+      a.path !== b.path && (!index || a.path !== schedule[index - 1].a.path)
+    );
+    const optimizeLunchSchedule = schedule => {
+      let overlap = scheduleOverlapScore(schedule);
+      let waste = packageWasteScore(schedule);
+      let score = overlap - 5 * waste;
+      const baseline = {score, overlap, waste};
+      let swaps = 0;
+      const affectedOverlap = overlapLookupFor(schedule);
+      for (let pass = 0; pass < 32; pass += 1) {
+        const candidates = [];
+        for (let left = 0; left < schedule.length - 1; left += 1) {
+          for (let right = left + 1; right < schedule.length; right += 1) {
+            if (schedule[left].a.path === schedule[right].a.path) continue;
+            const before = affectedOverlap([left, right]);
+            [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
+            if (validLunchSchedule(schedule)) {
+              const candidateOverlap = overlap - before + affectedOverlap([left, right]);
+              if (candidateOverlap > overlap) {
+                candidates.push({left, right, overlap: candidateOverlap});
+              }
+            }
+            [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
+          }
+        }
+        candidates.sort((left, right) =>
+          right.overlap - left.overlap || left.left - right.left || left.right - right.right
+        );
+        let accepted = null;
+        for (const candidate of candidates) {
+          [schedule[candidate.left].a, schedule[candidate.right].a] =
+            [schedule[candidate.right].a, schedule[candidate.left].a];
+          const candidateWaste = packageWasteScore(schedule);
+          if (candidateWaste <= waste + 0.0001) {
+            accepted = {...candidate, waste: candidateWaste};
+            break;
+          }
+          [schedule[candidate.left].a, schedule[candidate.right].a] =
+            [schedule[candidate.right].a, schedule[candidate.left].a];
+        }
+        if (!accepted) break;
+        overlap = accepted.overlap;
+        waste = accepted.waste;
+        score = overlap - 5 * waste;
+        swaps += 1;
+      }
+      let bestComposite = null;
+      for (let left = 0; left < schedule.length - 1; left += 1) {
+        for (let right = left + 1; right < schedule.length; right += 1) {
+          if (schedule[left].a.path === schedule[right].a.path) continue;
+          const before = affectedOverlap([left, right]);
+          [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
+          if (validLunchSchedule(schedule)) {
+            const candidateOverlap = overlap - before + affectedOverlap([left, right]);
+            if (candidateOverlap >= baseline.overlap) {
+              const candidateWaste = packageWasteScore(schedule);
+              const candidateScore = candidateOverlap - 5 * candidateWaste;
+              if (candidateWaste <= waste + 0.0001
+                  && candidateScore > score + 0.001
+                  && (!bestComposite || candidateScore > bestComposite.score + 0.001)) {
+                bestComposite = {
+                  left, right, score: candidateScore,
+                  overlap: candidateOverlap, waste: candidateWaste
+                };
+              }
+            }
+          }
+          [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
+        }
+      }
+      if (bestComposite) {
+        [schedule[bestComposite.left].a, schedule[bestComposite.right].a] =
+          [schedule[bestComposite.right].a, schedule[bestComposite.left].a];
+        ({score, overlap, waste} = bestComposite);
+        swaps += 1;
+      }
+      scheduleOptimization = {baseline, optimized: {score, overlap, waste}, swaps};
+      return schedule;
     };
     const buildDefaultSchedule = () => {
       const reviewable = stretch
@@ -380,7 +600,7 @@
       const curriculum = buildPracticeSchedule(reviewable, fillers);
       const lunchUses = new Map();
       let priorLunch = "";
-      return curriculum.map(({recipe: b, practice}) => {
+      const baseline = curriculum.map(({recipe: b, practice}) => {
         const candidates = easy.map(([recipe]) => recipe)
           .filter(recipe => recipe.path !== b.path)
           .sort((left, right) =>
@@ -395,6 +615,7 @@
         priorLunch = a.path;
         return {a, b, practice};
       });
+      return optimizeLunchSchedule(baseline);
     };
     const selectionForWeek = number => {
       const state = plans[number] || {};
@@ -408,18 +629,24 @@
     const nextLunchForWeek = () => {
       const dinner = dinners.find(recipe => recipe.path === mealB.value);
       if (!dinner) return null;
-      const otherWeeks = Array.from({length: WEEK_COUNT}, (_, index) => index + 1)
-        .filter(number => number !== cycleWeek)
-        .map(selectionForWeek);
-      const lunchUses = otherWeeks.reduce((uses, selection) => {
+      const schedule = Array.from({length: WEEK_COUNT}, (_, index) => selectionForWeek(index + 1));
+      const lunchUses = schedule.reduce((uses, selection, index) => {
+        if (index === cycleWeek - 1) return uses;
         if (selection.a) uses.set(selection.a.path, (uses.get(selection.a.path) || 0) + 1);
         return uses;
       }, new Map());
+      const candidateScore = recipe => {
+        const candidateSchedule = schedule.map(selection => ({...selection}));
+        candidateSchedule[cycleWeek - 1].a = recipe;
+        candidateSchedule[cycleWeek - 1].b = dinner;
+        return validLunchSchedule(candidateSchedule)
+          ? scheduleFitScore(candidateSchedule) - (lunchUses.get(recipe.path) || 0)
+          : -Infinity;
+      };
       return easy.map(([recipe]) => recipe)
         .filter(recipe => recipe.path !== mealA.value && recipe.path !== dinner.path)
         .sort((left, right) =>
-          (lunchUses.get(left.path) || 0) - (lunchUses.get(right.path) || 0)
-          || overlapScore(right, dinner) - overlapScore(left, dinner)
+          candidateScore(right) - candidateScore(left)
           || costScore(left) - costScore(right)
           || left.title.localeCompare(right.title)
         )[0];
@@ -455,6 +682,10 @@
       [
         /\bPeppadew peppers?\b/i,
         "mild pickled cherry peppers, or jarred roasted red peppers with a splash of vinegar"
+      ],
+      [
+        /\bMixed mushrooms?\b/i,
+        "cremini or button mushrooms"
       ]
     ].find(([pattern]) => pattern.test(name))?.[1] || "";
     const unitAliases = {
@@ -466,7 +697,8 @@
       g: ["mass", 1], gram: ["mass", 1], grams: ["mass", 1],
       kg: ["mass", 1000], kilogram: ["mass", 1000], kilograms: ["mass", 1000],
       oz: ["mass", 28.3495], ounce: ["mass", 28.3495], ounces: ["mass", 28.3495],
-      lb: ["mass", 453.592], lbs: ["mass", 453.592], pound: ["mass", 453.592], pounds: ["mass", 453.592]
+      lb: ["mass", 453.592], lbs: ["mass", 453.592], pound: ["mass", 453.592], pounds: ["mass", 453.592],
+      knob: ["volume", 15], knobs: ["volume", 15]
     };
     const countUnits = /^(?:units?|pieces?|cloves?|heads?|bunches?|slices?|cans?|tins?|boxes?|jars?|bags?|bottles?|packages?|scoops?|servings?)$/i;
     const singularCountUnit = unit => ({
@@ -484,18 +716,71 @@
       .replace(/\s*\/\s*/g, " / ")
       .replace(/\s+/g, " ")
       .trim();
-    const packageVolume = /\b(coconut milk|milk|broth|stock|cream|juice|vinegar|sauce|yogurt|tomato(?:es)?)\b/i;
+    const packageVolume = /\b(coconut milk|milk|broth|stock|juice|vinegar|sauce|yogurt|canned tomato(?:es)?)\b/i;
+    const shoppingConversions = {
+      "Garlic": {dimension: "count:clove", unit: "clove", factors: {count: 1, "count:clove": 1}, exact: ["count", "count:clove"]},
+      "Onions": {dimension: "count", unit: "", factors: {count: 1, volume: 1 / 300}, exact: ["count"]},
+      "Canned chickpeas": {dimension: "volume", factors: {volume: 1, "count:can": 480}, exact: ["volume"]},
+      "Canned tomatoes": {dimension: "volume", factors: {volume: 1, mass: 1}, exact: ["volume"]},
+      "Pasta sauce": {dimension: "volume", factors: {volume: 1, mass: 1}, exact: ["volume"]},
+      "Tomato paste": {dimension: "mass", factors: {mass: 1, count: 42.5}, exact: ["mass"]},
+      "Carrots": {dimension: "mass", factors: {mass: 1, volume: .5, count: 60}, exact: ["mass"]},
+      "Spinach": {dimension: "mass", factors: {mass: 1, volume: .125}, exact: ["mass"]},
+      "Mushrooms": {dimension: "mass", factors: {mass: 1, volume: 70 / 240}, exact: ["mass"]},
+      "Mixed mushrooms": {dimension: "mass", factors: {mass: 1, volume: 70 / 240}, exact: ["mass"]},
+      "Fresh ginger": {dimension: "mass", factors: {mass: 1, volume: 1, count: 15, "unit:inch piece": 15}, exact: ["mass"]},
+      "Potatoes": {dimension: "mass", factors: {mass: 1, count: 200}, exact: ["mass"]},
+      "Parmesan": {dimension: "mass", factors: {mass: 1, volume: 80 / 240}, exact: ["mass"]},
+      "Feta": {dimension: "mass", factors: {mass: 1, volume: 150 / 240}, exact: ["mass"]},
+      "Fresh mozzarella": {dimension: "mass", factors: {mass: 1, volume: .7}, exact: ["mass"]},
+      "Provolone": {dimension: "mass", factors: {mass: 1, volume: 112 / 240}, exact: ["mass"]},
+      "Cheddar": {dimension: "mass", factors: {mass: 1, volume: 112 / 240}, exact: ["mass"]}
+    };
+    const normalizeShoppingMeasure = (ingredient, measure) => {
+      const label = canonicalIngredient(ingredient.name);
+      if (label === "Brown rice" && /\bcooked\b/i.test(ingredient.name) && measure.dimension === "mass") {
+        return {...measure, value: measure.value * .375, approximate: true};
+      }
+      const conversion = shoppingConversions[label];
+      const factor = conversion?.factors[measure.dimension];
+      if (!conversion || factor === undefined) return measure;
+      return {
+        dimension: conversion.dimension,
+        unit: conversion.unit || "",
+        value: measure.value * factor,
+        approximate: Boolean(measure.approximate)
+          || (!conversion.exact.includes(measure.dimension) && measure.dimension !== conversion.dimension)
+      };
+    };
     const measureFor = ingredient => {
       if (!Number.isFinite(ingredient.value)) return null;
+      const finish = measure => normalizeShoppingMeasure(ingredient, measure);
       const unit = (ingredient.unit || "").toLowerCase();
       const known = unitAliases[unit];
-      if (known) return {dimension: known[0], value: ingredient.value * known[1]};
+      if (known) {
+        if (/\blemon zest\b/i.test(ingredient.name) && known[0] === "volume") {
+          return finish({
+            dimension: "count",
+            unit: "",
+            value: ingredient.value * known[1] / 15,
+            approximate: true
+          });
+        }
+        const dimension = known[0] === "mass" && packageVolume.test(ingredient.name)
+          ? "volume"
+          : known[0];
+        return finish({
+          dimension,
+          value: ingredient.value * known[1],
+          approximate: dimension !== known[0]
+        });
+      }
       if (countUnits.test(unit)) {
         const countUnit = singularCountUnit(unit);
         if (countUnit === "unit") {
-          return {dimension: "count", unit: "", value: ingredient.value};
+          return finish({dimension: "count", unit: "", value: ingredient.value});
         }
-        return {dimension: `count:${countUnit}`, unit: countUnit, value: ingredient.value};
+        return finish({dimension: `count:${countUnit}`, unit: countUnit, value: ingredient.value});
       }
       if (!unit) {
         const packageMatch = ingredient.name.match(
@@ -511,29 +796,190 @@
             const dimension = packageVolume.test(ingredient.name) && alias[0] === "mass"
               ? "volume"
               : alias[0];
-            return {
+            return finish({
               dimension,
               value: ingredient.value * Number(physical[1]) * alias[1],
               approximate: dimension !== alias[0]
-            };
+            });
           }
           const packageUnit = `${size} ${singularCountUnit(packageMatch[2])}`;
-          return {dimension: `package:${packageUnit}`, unit: packageUnit, value: ingredient.value};
+          return finish({dimension: `package:${packageUnit}`, unit: packageUnit, value: ingredient.value});
         }
         const leadingUnit = ingredient.name.match(
           /^(?:to\s+\d+(?:\s+\d+\/\d+)?\s+)?(tbsp|tablespoons?|tsp|teaspoons?|cups?|oz|ounces?|lbs?|pounds?|g|grams?|kg|kilograms?|ml|milliliters?|l|liters?)\b\.?/i
         )?.[1].toLowerCase();
         const embedded = unitAliases[leadingUnit];
-        if (embedded) return {dimension: embedded[0], value: ingredient.value * embedded[1]};
+        if (embedded) return finish({dimension: embedded[0], value: ingredient.value * embedded[1]});
         const namedCount = ingredient.name.match(/^(cloves?|heads?|bunches?|slices?|cans?|tins?|boxes?|jars?|bags?|bottles?|packages?|scoops?|pieces?|servings?)\b/i);
         if (namedCount) {
           const countUnit = singularCountUnit(namedCount[1]);
-          return {dimension: `count:${countUnit}`, unit: countUnit, value: ingredient.value};
+          return finish({dimension: `count:${countUnit}`, unit: countUnit, value: ingredient.value});
         }
-        return {dimension: "count", unit: "", value: ingredient.value};
+        return finish({dimension: "count", unit: "", value: ingredient.value});
       }
-      return {dimension: `unit:${unit}`, unit, value: ingredient.value};
+      return finish({dimension: `unit:${unit}`, unit, value: ingredient.value});
     };
+    // Common Canadian package sizes used only for schedule scoring and carryover.
+    const packageAssumptions = [
+      {pattern: /^Eggs$/i, dimension: "count", size: 12, keepWeeks: 4, weight: .5, carry: false},
+      {pattern: /^Milk$/i, dimension: "volume", size: 2000, keepWeeks: 2, weight: .5, carry: false},
+      {pattern: /^Whey protein powder$/i, dimension: "count:scoop", size: 60, keepWeeks: 26, weight: .25},
+      {pattern: /^Whole-grain bread$/i, dimension: "count:slice", size: 20, keepWeeks: 8, weight: .5},
+      {pattern: /^Brown rice$/i, dimension: "mass", size: 907, keepWeeks: 26, weight: .5},
+      {pattern: /^Rolled oats$/i, dimension: "volume", size: 3000, keepWeeks: 26, weight: .25},
+      {pattern: /^Lasagna noodles$/i, dimension: "count", size: 12, keepWeeks: 26, weight: .5},
+      {pattern: /^Orzo$/i, dimension: "volume", size: 600, keepWeeks: 26, weight: .5},
+      {pattern: /^Panko breadcrumbs$/i, dimension: "volume", size: 720, keepWeeks: 26, weight: .5},
+      {pattern: /^Instant yeast$/i, dimension: "mass", size: 113, keepWeeks: 26, weight: .25},
+      {pattern: /^Taco seasoning$/i, dimension: "count", size: 1, keepWeeks: 26, weight: .25},
+      {pattern: /^Veggie Stock Concentrate$/i, dimension: "count", size: 1, keepWeeks: 26, weight: .25},
+      {pattern: /^Coconut milk$/i, dimension: "volume", size: 400, keepWeeks: 4, weight: 3},
+      {pattern: /^Canned green lentils$/i, dimension: "mass", size: 350, keepWeeks: 1, weight: 2},
+      {pattern: /^Canned chickpeas$/i, dimension: "volume", size: 480, keepWeeks: 1, weight: 1},
+      {pattern: /^Canned tomatoes$/i, dimension: "volume", size: 398, keepWeeks: 4, weight: 1},
+      {pattern: /^Canned tomato sauce$/i, dimension: "volume", size: 213, keepWeeks: 4, weight: 2},
+      {pattern: /^Tomato paste$/i, dimension: "mass", size: 156, keepWeeks: 8, weight: 1},
+      {pattern: /^Pasta sauce$/i, dimension: "volume", size: 650, keepWeeks: 8, weight: 2},
+      {pattern: /^Pizza sauce$/i, dimension: "volume", size: 650, keepWeeks: 8, weight: 2},
+      {pattern: /^Jarred roasted red peppers$/i, dimension: "mass", size: 340, keepWeeks: 4, weight: 3},
+      {pattern: /^Peppadew peppers in brine$/i, dimension: "volume", size: 375, keepWeeks: 4, weight: 3},
+      {pattern: /^Mushrooms$/i, dimension: "mass", size: 227, keepWeeks: 0, weight: 1},
+      {pattern: /^Mixed mushrooms$/i, dimension: "mass", size: 227, keepWeeks: 0, weight: 2},
+      {pattern: /^Spinach$/i, dimension: "mass", size: 227, keepWeeks: 0, weight: 1},
+      {pattern: /^Ricotta$/i, dimension: "mass", size: 475, keepWeeks: 1, weight: 3},
+      {pattern: /^Cream cheese$/i, dimension: "mass", size: 250, keepWeeks: 2, weight: 2},
+      {pattern: /^Feta$/i, dimension: "mass", size: 200, keepWeeks: 2, weight: 2},
+      {pattern: /^Fresh mozzarella$/i, dimension: "mass", size: 200, keepWeeks: 1, weight: 2},
+      {pattern: /^Provolone$/i, dimension: "mass", size: 160, keepWeeks: 2, weight: 2},
+      {pattern: /^Cheddar$/i, dimension: "mass", size: 400, keepWeeks: 3, weight: 1},
+      {pattern: /^Mozzarella$/i, dimension: "mass", size: 400, keepWeeks: 3, weight: 1},
+      {pattern: /^Parmesan$/i, dimension: "mass", size: 200, keepWeeks: 8, weight: 1},
+      {pattern: /^Sour cream$/i, dimension: "volume", size: 250, keepWeeks: 2, weight: 2},
+      {pattern: /^Greek yogurt$/i, dimension: "volume", size: 100, keepWeeks: 2, weight: 1},
+      {pattern: /^Unbaked pie crusts$/i, dimension: "count", size: 2, keepWeeks: 12, weight: 2},
+      {pattern: /^(?:Fettuccine|Rigatoni pasta|Rotini|Small pasta shells|Spaghetti)$/i, dimension: "mass", size: 454, keepWeeks: 26, weight: .5}
+    ];
+    const packageProfile = (label, dimension) =>
+      packageAssumptions.find(profile => profile.dimension === dimension && profile.pattern.test(label));
+    const packageKey = (label, dimension) => `${label.toLowerCase()}|${dimension}`;
+    const packageNeedCache = new WeakMap();
+    const packageNeedsFrom = ingredients => {
+      const needs = new Map();
+      ingredients.forEach(rawIngredient => {
+        const ingredient = Array.isArray(rawIngredient)
+          ? {name: rawIngredient[0], value: rawIngredient[1], unit: rawIngredient[2] || null}
+          : rawIngredient;
+        if (isPantry(ingredient.name) || equipmentIngredient.test(ingredient.name)
+            || (optionalIngredient.test(ingredient.name) && !Number.isFinite(ingredient.value))) return;
+        const measure = measureFor(ingredient);
+        if (!measure) return;
+        const canonical = canonicalIngredient(ingredient.name);
+        const label = canonical.charAt(0).toUpperCase() + canonical.slice(1);
+        const profile = packageProfile(label, measure.dimension);
+        if (!profile) return;
+        const key = packageKey(label, measure.dimension);
+        const current = needs.get(key) || {label, dimension: measure.dimension, profile, value: 0};
+        current.value += measure.value;
+        needs.set(key, current);
+      });
+      return needs;
+    };
+    const packageNeedsForRecipe = recipe => {
+      if (!packageNeedCache.has(recipe)) {
+        packageNeedCache.set(recipe, packageNeedsFrom(recipe.ingredientDetails));
+      }
+      return packageNeedCache.get(recipe);
+    };
+    const packageNeedsForBreakfast = plan => {
+      if (!packageNeedCache.has(plan)) {
+        packageNeedCache.set(plan, packageNeedsFrom(breakfastsFor(plan).flatMap(day => day.ingredients)));
+      }
+      return packageNeedCache.get(plan);
+    };
+    const packageNeedsForWeek = (selection, index) => {
+      const needs = new Map();
+      [
+        packageNeedsForRecipe(selection.a),
+        packageNeedsForRecipe(selection.b),
+        packageNeedsForBreakfast(selection.breakfast || defaultBreakfastPlans[index])
+      ].forEach(source => source.forEach((need, key) => {
+        const current = needs.get(key) || {...need, value: 0};
+        current.value += need.value;
+        needs.set(key, current);
+      }));
+      return needs;
+    };
+    const expirePackageLots = (inventory, week) => {
+      let waste = 0;
+      inventory.forEach((state, key) => {
+        const kept = [];
+        state.lots.forEach(lot => {
+          if (lot.expires < week) {
+            waste += lot.value / state.profile.size * state.profile.weight;
+          } else {
+            kept.push(lot);
+          }
+        });
+        state.lots = kept;
+        if (!kept.length) inventory.delete(key);
+      });
+      return waste;
+    };
+    const consumePackageNeeds = (inventory, needs, week) => {
+      needs.forEach((need, key) => {
+        const state = inventory.get(key) || {profile: need.profile, lots: []};
+        let remaining = need.value;
+        state.lots.forEach(lot => {
+          const used = Math.min(lot.value, remaining);
+          lot.value -= used;
+          remaining -= used;
+        });
+        state.lots = state.lots.filter(lot => lot.value > 0.0001);
+        if (remaining > 0.0001) {
+          const purchased = Math.ceil((remaining - 0.0001) / need.profile.size) * need.profile.size;
+          const leftover = purchased - remaining;
+          if (leftover > 0.0001) {
+            state.lots.push({value: leftover, expires: week + need.profile.keepWeeks});
+          }
+        }
+        if (state.lots.length) inventory.set(key, state);
+        else inventory.delete(key);
+      });
+    };
+    const simulatePackageInventory = schedule => {
+      const inventory = new Map();
+      let waste = 0;
+      schedule.forEach((selection, index) => {
+        waste += expirePackageLots(inventory, index + 1);
+        consumePackageNeeds(inventory, packageNeedsForWeek(selection, index), index + 1);
+      });
+      return {inventory, waste};
+    };
+    const packageWasteScore = schedule => {
+      const {inventory, waste} = simulatePackageInventory(schedule);
+      return waste + [...inventory.values()].reduce((total, state) =>
+        total + state.lots.reduce((sum, lot) => sum + lot.value, 0) / state.profile.size * state.profile.weight
+      , 0);
+    };
+    const packageInventoryBeforeWeek = () => {
+      const priorSchedule = Array.from(
+        {length: cycleWeek - 1},
+        (_, index) => selectionForWeek(index + 1)
+      );
+      const {inventory} = simulatePackageInventory(priorSchedule);
+      expirePackageLots(inventory, cycleWeek);
+      return inventory;
+    };
+    const hasPackageAssumption = item => [...item.measures]
+      .some(([dimension]) => Boolean(packageProfile(item.label, dimension)));
+    const packageCarryoverCovers = (item, inventory) => item.measures.size > 0
+      && [...item.measures].every(([dimension, measure]) => {
+        const profile = packageProfile(item.label, dimension);
+        if (!profile || profile.carry === false) return false;
+        const state = inventory.get(packageKey(item.label, dimension));
+        const available = state?.lots.reduce((sum, lot) => sum + lot.value, 0) || 0;
+        return available + 0.0001 >= measure.value;
+      });
     const formatNumber = value => new Intl.NumberFormat("en-CA", {
       maximumFractionDigits: 2
     }).format(Math.round(value * 100) / 100);
@@ -581,7 +1027,7 @@
           ? `Practice · ${skillLabel}`
           : "Cook fresh";
       return `<a class="meal-slot breakfast-slot breakfast-${level.toLowerCase()} meal-link breakfast-link" href="${root}breakfast.html?${query}">
-        <strong>Breakfast · ${level} · 1 adult portion</strong>
+        <strong>Breakfast · ${level}</strong>
         <span>${escapeHTML(breakfast.meal)}</span>
         <small><span>${escapeHTML(cue)}</span><b>View recipe →</b></small>
       </a>`;
@@ -600,7 +1046,7 @@
       const key = label.toLowerCase();
       const item = items.get(key) || {
         label,
-        category: carryoverKey(label) ? "Bulk" : groceryCategory(label),
+        category: bulkAisle(label) ? "Bulk" : groceryCategory(label),
         alternative: commonAlternative(label),
         measures: new Map(),
         sources: {lunch: 0, dinner: 0, breakfast: 0}
@@ -634,12 +1080,25 @@
     console.assert(!pantryStock.some(pattern => pattern.test("Pepper Jack Cheese")), "pepper jack is not black pepper");
     console.assert(clampWeek(0) === 1 && clampWeek(33) === WEEK_COUNT, "week navigation should stay in range");
     console.assert(canonicalIngredient("chopped onion") === "Onions", "onion variants should merge");
+    console.assert(canonicalIngredient("yellow onion") === "Onions", "yellow and generic onions should share one shopping item");
+    console.assert(canonicalIngredient("small Vidalia onion") === "Onions", "sweet cooking onions should share the practical onion purchase");
+    console.assert(canonicalIngredient("red onion") === "Red onions", "red onions should remain distinct");
+    console.assert(canonicalIngredient("scallions") === "Green onions", "green onions should remain distinct");
     console.assert(canonicalIngredient("hard corn taco shells") === "Taco shells", "taco shells should merge");
     console.assert(canonicalIngredient("can light coconut milk") === "Coconut milk", "coconut milk variants should merge");
     console.assert(canonicalIngredient("to 10 ounces green beans or slender asparagus") === "Green beans", "range fragments should be removed");
     console.assert(canonicalIngredient("garlic powder") === "Garlic powder", "garlic powder must not merge with fresh garlic");
     console.assert(canonicalIngredient("onion powder") === "Onion powder", "onion powder must not merge with fresh onions");
     console.assert(canonicalIngredient("(28 ounce) can crushed tomatoes") === "Canned tomatoes", "canned tomatoes need a distinct aisle label");
+    console.assert(canonicalIngredient("(6.5 ounce) cans canned tomato sauce") === "Canned tomato sauce", "canned tomato sauce should remain distinct from pasta sauce");
+    console.assert(canonicalIngredient("prepared tomato sauce") === "Pasta sauce", "prepared and jarred pasta sauce should merge");
+    console.assert(canonicalIngredient("fresh mozzarella") === "Fresh mozzarella", "fresh mozzarella should remain distinct from low-moisture mozzarella");
+    console.assert(canonicalIngredient("unsalted butter") === "Unsalted butter", "butter variants should merge");
+    console.assert(canonicalIngredient("crushed red pepper") === "Chilli flakes", "crushed red pepper is a spice");
+    console.assert(canonicalIngredient("frozen green peas") === "Frozen peas", "frozen peas should merge");
+    console.assert(canonicalIngredient("fresh parsley leaves") === "Fresh parsley", "fresh parsley variants should merge");
+    console.assert(canonicalIngredient("medium potato") === "Potatoes", "singular and plural potatoes should merge");
+    console.assert(canonicalIngredient("lemon zest") === "Lemons", "lemon zest should roll up to the fruit purchase");
     console.assert(formatMeasure(measureFor({name: "oz. green beans", value: 12.5, unit: null})) === "354.37 g", "leading source units should remain measurable");
     console.assert(formatMeasure({dimension: "volume", value: 775}, "Coconut milk") === "775 ml", "large liquid totals should stay metric");
     console.assert(formatMeasure({dimension: "volume", value: 319.2}, "Rolled oats") === "1.33 cups", "dry bulk volumes should stay in cups");
@@ -647,6 +1106,7 @@
     console.assert(packageDescription("6.5 ounce") === "6.5 oz", "package decimals must be preserved");
     console.assert(formatMeasure(measureFor({name: "medium onion", value: 2.5, unit: null})) === "2.5 \u00b7 buy 3", "fractional counts should preserve exact use and purchase quantity");
     console.assert(measureFor({name: "onion", value: 1.25, unit: "unit"}).dimension === "count", "generic units must merge with unitless counts");
+    console.assert(measureFor({name: "lemon zest", value: 3, unit: "tsp"}).value === 1, "lemon zest should estimate whole fruit at three teaspoons each");
     console.assert(breakfastPlans.length >= 2, "breakfast needs a rotation");
     console.assert(breakfastPlans.every(plan => {
       const days = breakfastsFor(plan);
@@ -678,11 +1138,19 @@
     console.assert(groceryCategory("cayenne pepper") === "Cans & dry goods", "ground spices are dry goods");
     console.assert(groceryCategory("beef broth") === "Cans & dry goods", "broth is a dry-goods aisle item");
     console.assert(groceryCategory("canned tomatoes") === "Cans & dry goods", "canned tomatoes are not fresh produce");
+    console.assert(groceryCategory("Ricotta") === "Dairy & eggs", "ricotta belongs in dairy");
     console.assert(groceryCategory("fresh rosemary") === "Produce", "fresh herbs belong in produce");
+    console.assert(groceryCategory("Leeks") === "Produce", "leeks belong in produce");
+    console.assert(groceryCategory("Potatoes") === "Produce", "potatoes belong in produce");
+    console.assert(groceryCategory("Jarred roasted red peppers") === "Cans & dry goods", "jarred peppers are not fresh produce");
+    console.assert(groceryCategory("Unbaked pie crusts") === "Frozen", "unbaked pie crusts belong in frozen");
+    console.assert(bulkAisle("Chilli flakes"), "chilli flakes belong in Bulk");
+    console.assert(bulkAisle("Eggs") && bulkAisle("Milk"), "eggs and milk belong in Bulk");
     console.assert(carryoverKey("rigatoni pasta") === "rigatoni pasta", "dry pasta belongs in Bulk");
     console.assert(carryoverKey("soy sauce") === "soy sauce", "durable condiments belong in Bulk");
     console.assert(carryoverKey("prepared pasta sauce") === null, "prepared sauces do not belong in Bulk");
     console.assert(carryoverKey("bulk sweet Italian sausage") === null, "bulk meat does not belong in Bulk");
+    console.assert(carryoverKey("Eggs") === null && carryoverKey("Milk") === null, "eggs and milk are not unconditional pantry carryover");
 
     function mealLink(recipe, label, day, dayIndex) {
       const query = new URLSearchParams({
@@ -692,7 +1160,7 @@
         ? "Frozen Sunday · thaw overnight"
         : "Refrigerated Sunday";
       return `<a class="meal-link" href="${root}${recipe.path}?${query}">
-        <strong>${label} · 1 adult portion</strong>
+        <strong>${label}</strong>
         <span>${escapeHTML(recipe.title)}</span>
         <small><span>${storage}</span><b>View recipe →</b></small>
       </a>`;
@@ -798,8 +1266,12 @@
         .filter(category => grouped[category]?.length)
         .map(category => [category, grouped[category].sort((x, y) => x.label.localeCompare(y.label))]);
       const previousBulk = priorBulkKeys();
+      const packageInventory = packageInventoryBeforeWeek();
       latestGroceries.forEach(([, items]) => items.forEach(item => {
-        item.carryover = previousBulk.has(item.label.toLowerCase()) && Boolean(carryoverKey(item.label));
+        item.carryover = packageCarryoverCovers(item, packageInventory)
+          || (!hasPackageAssumption(item)
+            && previousBulk.has(item.label.toLowerCase())
+            && Boolean(carryoverKey(item.label)));
         const key = encodeURIComponent(item.label.toLowerCase());
         item.carried = item.carryover && !carryoverDismissed.has(key);
       }));
@@ -861,7 +1333,16 @@
     const groceryProgress = document.getElementById("grocery-progress");
     const reroll = document.getElementById("reroll");
     const cycle = document.getElementById("cycle");
-    const cycleProgress = document.getElementById("cycle-progress");
+    const weekSelect = document.getElementById("week-select");
+    const previousWeek = document.getElementById("previous-week");
+    const nextWeek = document.getElementById("next-week");
+    weekSelect.innerHTML = Array.from(
+      {length: WEEK_COUNT},
+      (_, index) => `<option value="${index + 1}">Week ${index + 1}</option>`
+    ).join("");
+    weekSelect.addEventListener("change", () => loadWeek(weekSelect.value));
+    previousWeek.addEventListener("click", () => loadWeek(cycleWeek - 1));
+    nextWeek.addEventListener("click", () => loadWeek(cycleWeek + 1));
     breakfastPlans.forEach(plan => {
       const node = document.createElement("option");
       node.value = plan.id;
@@ -879,18 +1360,10 @@
     };
 
     function renderWeekNav() {
-      cycle.textContent = `Choose a week · ${cycleWeek} of ${WEEK_COUNT}`;
-      cycleProgress.innerHTML = Array.from({length: WEEK_COUNT}, (_, index) => {
-        const number = index + 1;
-        return `<button type="button" data-week="${number}" ${number === cycleWeek ? 'class="is-current" aria-current="step"' : ""}>Week ${number}</button>`;
-      }).join("");
-      cycleProgress.querySelectorAll("button").forEach(button =>
-        button.addEventListener("click", () => {
-          const week = button.dataset.week;
-          loadWeek(week);
-          cycleProgress.querySelector(`[data-week="${week}"]`)?.focus();
-        })
-      );
+      cycle.textContent = `Week ${cycleWeek} of ${WEEK_COUNT}`;
+      weekSelect.value = String(cycleWeek);
+      previousWeek.disabled = cycleWeek === 1;
+      nextWeek.disabled = cycleWeek === WEEK_COUNT;
     }
 
     function loadWeek(number) {
@@ -953,6 +1426,22 @@
           practice.kind !== "review" || reviewPaths.has(b.path)
         ),
         "only tagged complex techniques should enter spaced review"
+      );
+      const lunchCounts = defaultSchedule.reduce((counts, {a}) => {
+        counts.set(a.path, (counts.get(a.path) || 0) + 1);
+        return counts;
+      }, new Map());
+      console.assert(
+        easy.every(([recipe]) => lunchCounts.get(recipe.path) === WEEK_COUNT / easy.length),
+        "lunch optimization must preserve the balanced four-use rotation"
+      );
+      console.assert(
+        scheduleOptimization.optimized.overlap >= scheduleOptimization.baseline.overlap
+        && scheduleOptimization.optimized.waste <= scheduleOptimization.baseline.waste + 0.0001
+        && scheduleOptimization.optimized.score >= scheduleOptimization.baseline.score
+        && scheduleOptimization.optimized.overlap === scheduleOverlapScore(defaultSchedule)
+        && Math.abs(scheduleOptimization.optimized.waste - packageWasteScore(defaultSchedule)) < 0.0001,
+        "optimization must improve overlap without increasing normalized package waste"
       );
       [breakfastSelect, mealA, mealB].forEach(control => control.addEventListener("change", () => {
         checked.clear();
