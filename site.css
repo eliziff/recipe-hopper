@@ -210,6 +210,8 @@ main > div > .flex.items-center.justify-between.mb-8 h1 {
 .recipe-card {
   position: relative;
   min-height: 10.5rem;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 10.5rem;
   border: 1px solid var(--line);
   border-radius: .75rem;
   box-shadow: none;
@@ -566,6 +568,7 @@ main img.rounded-xl {
 
 .prep-summary div {
   display: flex;
+  flex: 0 0 auto;
   align-items: baseline;
   gap: .55rem;
   min-width: 0;
@@ -582,6 +585,7 @@ main img.rounded-xl {
 .prep-summary strong {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.05rem;
+  white-space: nowrap;
 }
 
 .batch-note {
@@ -594,6 +598,92 @@ main img.rounded-xl {
 .batch-note a {
   color: var(--green);
   font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.technique-lesson {
+  margin: 0 0 1rem;
+  overflow: hidden;
+}
+
+.technique-lesson summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: .65rem;
+  padding: .85rem 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.technique-lesson summary::-webkit-details-marker { display: none; }
+.technique-lesson summary::after {
+  content: "+";
+  color: var(--green);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.technique-lesson[open] summary::after { content: "−"; }
+.technique-lesson summary span,
+.technique-lesson h3 {
+  color: var(--green);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.technique-lesson summary strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+}
+.lesson-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(15rem, .65fr);
+  gap: 1rem 1.5rem;
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--line);
+}
+.lesson-principle {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: .85rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: .88rem;
+  font-weight: 650;
+  line-height: 1.55;
+}
+.technique-lesson h3 { margin: 0 0 .4rem; }
+.technique-lesson ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--ink);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+.technique-lesson li + li { margin-top: .28rem; }
+.lesson-notes {
+  padding: .75rem;
+  border-radius: .5rem;
+  background: var(--soft);
+}
+.lesson-notes h3:not(:first-child) { margin-top: .75rem; }
+.lesson-notes p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.lesson-sources {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: .69rem;
+}
+.lesson-sources::before { content: "Sources · "; font-weight: 750; }
+.lesson-sources a {
+  color: var(--green);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -823,6 +913,11 @@ main img.rounded-xl {
 }
 
 .grocery-group.is-long { grid-column: 1 / -1; }
+.grocery-group.is-bulk {
+  border-color: #d8cfba;
+  background: #faf7ef;
+}
+.grocery-group.is-bulk h3 { color: #83552f; }
 
 .grocery-group h3 {
   margin-bottom: .6rem;
@@ -869,6 +964,11 @@ main img.rounded-xl {
   grid-column: 1 / -1;
   color: var(--muted);
   font-size: .66rem;
+}
+.substitute-note {
+  display: block;
+  margin-top: .12rem;
+  color: #83552f;
 }
 
 .portion-panel {
@@ -1006,6 +1106,7 @@ main img.rounded-xl {
   .portion-actions button { flex: 1; }
   .breakfast-recipe-grid { grid-template-columns: 1fr; }
   .prep-summary, .grocery-header { align-items: flex-start; flex-direction: column; }
+  .lesson-content { grid-template-columns: 1fr; }
   .batch-note, .grocery-meta { text-align: left; }
   .grocery-actions { justify-content: flex-start; }
   .grocery-groups { grid-template-columns: 1fr; }

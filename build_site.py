@@ -316,8 +316,23 @@ planner_recipes = [recipe for recipe in search_index if recipe["plannerReady"]]
 planner_stretch = [recipe for recipe in planner_recipes if "stretch" in recipe.get("tags", [])]
 if len(planner_recipes) - len(planner_stretch) < 8 or len(planner_stretch) < 8:
     raise ValueError("planner needs at least eight approachable and eight stretch recipes")
+(SITE / "static/planner-index.json").write_text(
+    json.dumps(planner_recipes, ensure_ascii=False, separators=(",", ":")),
+    encoding="utf-8",
+)
 search_path.write_text(
-    json.dumps(search_index, ensure_ascii=False, separators=(",", ":")),
+    json.dumps(
+        [
+            {
+                key: value
+                for key, value in recipe.items()
+                if key not in {"yieldVerified", "plannerReady", "servings", "ingredientDetails"}
+            }
+            for recipe in search_index
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ),
     encoding="utf-8",
 )
 recipe_by_path = {recipe["path"]: recipe for recipe in search_index}
@@ -394,6 +409,15 @@ for page in SITE.rglob("*.html"):
         )
         text = text.replace("</body>", portion_script + "\n</body>")
     if page.name == "index.html":
+        text = text.replace(
+            '<script src="/recipe-hopper/static/js/search.js"></script>',
+            "",
+        )
+        text = re.sub(
+            r"<img(?![^>]*\bloading=)",
+            '<img loading="lazy" decoding="async"',
+            text,
+        )
         text = re.sub(
             r"(>\s*)All Recipes(\s*</h1>)",
             lambda match: (
