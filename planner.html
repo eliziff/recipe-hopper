@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Weekly Meal Plan</title>
-  <link rel="stylesheet" href="/recipe-hopper/static/css/output.css">
-  <link rel="stylesheet" href="/recipe-hopper/static/css/custom-styles.css">
+  <link rel="stylesheet" href="static/css/output.css">
+  <link rel="stylesheet" href="static/css/custom-styles.css">
 </head>
 <body class="bg-gray-50">
   <main class="planner-shell mx-auto px-4">
     <header class="planner-header">
-      <a href="/recipe-hopper/">← Recipe library</a>
+      <a href="./">← Recipe library</a>
       <p class="eyebrow" id="cycle">Choose a week · 1 of 8</p>
       <h1>Weekly plan</h1>
       <nav class="cycle-progress" id="cycle-progress" aria-label="Choose a week"></nav>
@@ -27,6 +27,26 @@
       <div><span>Technique</span><strong id="skill"></strong></div>
       <p class="batch-note" id="batch-note"></p>
     </section>
+    <details class="technique-lesson bg-white border border-gray-200 rounded-xl" open>
+      <summary>
+        <span>Technique guide</span>
+        <strong id="lesson-title"></strong>
+      </summary>
+      <div class="lesson-content">
+        <p class="lesson-principle" id="lesson-principle"></p>
+        <div>
+          <h3>Method</h3>
+          <ol id="lesson-steps"></ol>
+        </div>
+        <div class="lesson-notes">
+          <h3>Look for</h3>
+          <p id="lesson-cue"></p>
+          <h3>Common mistake</h3>
+          <p id="lesson-mistake"></p>
+        </div>
+        <p class="lesson-sources" id="lesson-sources"></p>
+      </div>
+    </details>
     <section class="week-grid" id="week" aria-label="One-week meal calendar"></section>
 
     <section class="grocery-panel bg-white border border-gray-200 rounded-xl">
@@ -48,9 +68,9 @@
       <div class="grocery-groups" id="groceries"></div>
     </section>
   </main>
-  <script src="/recipe-hopper/static/js/breakfast-data.js"></script>
+  <script src="static/js/breakfast-data.js"></script>
   <script>
-    const root = "/recipe-hopper/";
+    const root = "./";
     const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const clampWeek = value => Math.min(8, Math.max(1, Number(value) || 1));
     const plans = JSON.parse(localStorage.getItem("recipe-hopper-plans") || "{}");
@@ -67,6 +87,134 @@
       forPlan: breakfastsFor,
       method: breakfastMethod
     } = window.RECIPE_HOPPER_BREAKFASTS;
+    const techniqueLessons = {
+      "blooming spices": {
+        principle: "Heating spices briefly in fat dissolves their aromatic compounds into the oil, so the flavour is carried through the entire curry.",
+        steps: [
+          "Measure the spices and have the next wet ingredient ready before the pan goes on.",
+          "Warm the oil over medium heat. Add whole seeds first, if used, and stir until they sizzle and smell fragrant.",
+          "Lower the heat for ground spices or curry paste. Stir constantly just until fragrant; paste may darken slightly and release oil.",
+          "Add the onion, tomato or other wet ingredient immediately to stop the frying before the spices scorch."
+        ],
+        cue: "A strong, rounded aroma and active sizzling without smoke or black flecks.",
+        mistake: "High heat or walking away. Burnt spice tastes bitter; discard it and restart.",
+        sources: [
+          ["Rouxbe: tempering spices", "https://rouxbe.com/knowledge-base/2357"],
+          ["Institute of Culinary Education: herbs and spices", "https://www.ice.edu/blog/understanding-herbs-culinary-deep-dive"]
+        ]
+      },
+      "layering and baking": {
+        principle: "Thin, even layers with sauce touching every pasta sheet hydrate uniformly and set into a sliceable structure.",
+        steps: [
+          "Grease the dish and spread a thin layer of sauce over the base.",
+          "Lay pasta in one even layer. Keep sauce directly below and above every sheet; do not leave dry corners exposed.",
+          "Distribute filling and cheese evenly instead of making thick pockets, then repeat.",
+          "Finish with pasta, sauce and cheese. Bake covered to cook through, then uncover to brown.",
+          "Rest for 15 minutes before cutting so the layers set instead of sliding apart."
+        ],
+        cue: "Bubbling edges, a golden top and no exposed, brittle pasta.",
+        mistake: "Too little sauce leaves hard patches; cutting immediately makes the filling run.",
+        sources: [
+          ["Barilla: no-boil lasagna", "https://www.barilla.com/en-ca/help-with/chefs-corner/how-to-prepare-a-no-boil-lasagna"],
+          ["Institute of Culinary Education: lasagna", "https://www.ice.edu/blog/frank-proto-lasagna-recipe"]
+        ]
+      },
+      "emulsifying a pan sauce": {
+        principle: "Agitation disperses butter into the sauce's water phase; starch from pasta water helps keep the fat suspended and the sauce glossy.",
+        steps: [
+          "Reserve pasta water before draining. Its starch is part of the sauce, not waste.",
+          "Simmer the gochujang, honey and vinegar until combined and slightly concentrated.",
+          "Lower the heat. Add butter gradually and swirl or whisk until each addition disappears into the sauce.",
+          "Add noodles and toss vigorously, adding pasta water a splash at a time until the sauce clings.",
+          "Stop while it is glossy and fluid; it thickens as it cools."
+        ],
+        cue: "A smooth sheen that coats each noodle with no oily puddle in the pan.",
+        mistake: "Hard boiling after the butter goes in can split the emulsion; excessive water makes it thin.",
+        sources: [
+          ["Culinary Institute of America: beurre blanc", "https://www.ciafoodies.com/beurre-blanc/"],
+          ["Institute of Culinary Education: pan sauce", "https://www.ice.edu/blog/chicken-pan-sauce-recipe"]
+        ]
+      },
+      "roux making": {
+        principle: "Cooking flour in fat removes its raw taste and disperses starch so it can thicken liquid evenly.",
+        steps: [
+          "Melt the fat over medium heat, add the flour and stir to a smooth, moist paste.",
+          "For a white roux, cook until frothy and no longer raw-smelling; for blond, continue to a pale straw colour.",
+          "Add liquid gradually while whisking. A warm roux takes cool liquid well; avoid an extreme temperature shock.",
+          "Bring the sauce to a gentle simmer so the starch fully thickens before judging consistency."
+        ],
+        cue: "The roux is smooth and glossy; the finished sauce coats the back of a spoon without lumps.",
+        mistake: "Scorched dark flecks cannot be rescued. Lumps usually come from adding liquid too quickly.",
+        sources: [
+          ["Culinary Institute of America: all about roux", "https://www.ciafoodies.com/all-about-roux/"],
+          ["Rouxbe: how to make roux", "https://rouxbe.com/cooking-school/how-to-make-roux"]
+        ]
+      },
+      "breading and shallow frying": {
+        principle: "Flour grips the dry chicken, egg binds the coating, and crumbs form the crisp outer layer.",
+        steps: [
+          "Pat the chicken dry and season it before breading.",
+          "Coat with flour and shake off excess; coat fully with egg and let excess drip away.",
+          "Press crumbs on gently, then shake loose crumbs off so they do not burn in the oil.",
+          "Fry promptly in hot, shimmering oil without crowding. Turn only after the first side is deeply golden.",
+          "Drain on a rack so steam does not soften the underside."
+        ],
+        cue: "Steady bubbling around the chicken and an even, deep-gold crust that stays attached.",
+        mistake: "Wet chicken, heavy flour or crowded oil produces a loose, pale and greasy crust.",
+        sources: [
+          ["Rouxbe: shallow frying", "https://rouxbe.com/tips-techniques/500-what-is-shallow-frying"],
+          ["Culinary Institute of America: schnitzel", "https://www.ciafoodies.com/what-im-cooking-schnitzel-with-tender-green-salad/"]
+        ]
+      },
+      "building and reducing a ragu": {
+        principle: "A ragù gains depth in stages: soften aromatics, brown meat, evaporate added liquid, then simmer gently until concentrated.",
+        steps: [
+          "Chop the aromatics evenly and soften them without browning or burning.",
+          "Raise the heat and brown the sausage. Give it space so released water evaporates and the meat fries instead of steaming.",
+          "Deglaze and reduce any wine or milk before adding tomato and stock.",
+          "Maintain a bare, uncovered simmer. Stir the bottom and add only a splash of liquid if it dries before the meat tenderizes.",
+          "Season at the end, once reduction has concentrated the salt and acidity."
+        ],
+        cue: "A thick, glossy sauce with tender meat and no watery pool around it.",
+        mistake: "Crowding greys the meat; hard boiling scorches the base; stopping early leaves a watery sauce.",
+        sources: [
+          ["Culinary Institute of America: ragù Bolognese", "https://www.ciafoodies.com/ragu-bolognese/"],
+          ["Italian Academy of Cuisine: registered ragù recipe", "https://accademiaitalianadellacucina.it/sites/default/files/Rag%C3%B9%20alla%20bolognese%20-%20updated%20recipe_20%20April%202023.pdf"]
+        ]
+      },
+      "pan searing and glazing": {
+        principle: "A dry surface and hot, uncrowded pan build browning; controlled heat turns the sugar-and-spice coating into a glaze without burning it.",
+        steps: [
+          "Pat the thighs dry, coat them evenly and preheat a heavy pan over medium heat.",
+          "Add a thin film of oil, then place the chicken with space between pieces.",
+          "Leave the first side undisturbed until deeply browned and it releases easily.",
+          "Turn and regulate the heat so the centre cooks while the sugar becomes shiny and deep brown.",
+          "Remove the pan from the heat if the glaze starts blackening; verify the thickest piece is cooked through."
+        ],
+        cue: "Deep brown—not black—glaze that clings to the chicken, with steady rather than violent sizzling.",
+        mistake: "A cold or crowded pan steams; excessive heat burns the sugar before the chicken is done.",
+        sources: [
+          ["Culinary Institute of America: essential techniques", "https://www.ciafoodies.com/the-essential-cooking-techniques/"],
+          ["Rouxbe: searing", "https://rouxbe.com/cooking-school/searing"]
+        ]
+      },
+      "dough fermentation": {
+        principle: "Yeast makes carbon dioxide that developed gluten traps. Temperature changes the rate, so the dough—not the clock—decides when fermentation is done.",
+        steps: [
+          "Measure accurately and mix until the dough gains the elasticity described in the recipe.",
+          "Cover tightly so the surface cannot dry. Mark the starting height on a straight-sided container.",
+          "End bulk fermentation when the dough is substantially larger, smoother, puffy and visibly aerated.",
+          "Shape gently, then proof again without pressing out all of the gas.",
+          "Use a light poke: fast spring-back needs more time; a slow return or lasting shallow dent is ready."
+        ],
+        cue: "A puffy, elastic dough with visible bubbles and a slow response to a gentle poke.",
+        mistake: "Following time alone in a hot or cold room causes under- or over-proofing; an uncovered surface forms a restrictive skin.",
+        sources: [
+          ["King Arthur Baking: bulk fermentation", "https://www.kingarthurbaking.com/blog/2019/07/22/bulk-fermentation"],
+          ["King Arthur Baking: judging proof", "https://www.kingarthurbaking.com/blog/2023/08/31/proofing-bread"]
+        ]
+      }
+    };
 
     const save = () => {
       plans[cycleWeek] = {
@@ -140,6 +288,8 @@
       [/\bgreen beans?\b/i, "Green beans"],
       [/\basparagus\b/i, "Asparagus"],
       [/\bcoconut milk\b/i, "Coconut milk"],
+      [/\b(?:cooked )?brown rice\b/i, "Brown rice"],
+      [/\b(?:cooked |steamed )?(?:white )?rice\b(?!\s+(?:vinegar|noodles?))/i, "Rice"],
       [/\b(?:plain )?greek yogurt\b/i, "Greek yogurt"],
       [/\b(?:whole|skim|2%|1%|full-fat|low-fat)?\s*milk\b/i, "Milk"],
       [/\bcurry powder\b/i, "Curry powder"],
@@ -267,8 +417,8 @@
       );
       return candidates[0];
     };
-    const durableBulk = /\b(rolled oats|whey protein powder|cocoa powder|instant coffee|peanut butter|rice|pasta|spaghetti|noodles|orzo|quinoa|barley|couscous|polenta|breadcrumbs|panko|crackers|dried lentils|dried beans|dried herbs|cinnamon|curry powder|ground cumin|ground coriander|chilli powder|chilli flakes|paprika|yeast|soy sauce|vinegar|honey|mustard|hot sauce|curry paste)\b/i;
-    const unsuitableCarryover = /\b(fresh|cooked|prepared|green beans|sauce)\b/i;
+    const durableBulk = /\b(rolled oats|whey protein powder|cocoa powder|instant coffee|peanut butter|rice|pasta|spaghetti|noodles|orzo|fettuccine|linguine|penne|rigatoni|rotini|macaroni|bucatini|capellini|fusilli|gemelli|quinoa|barley|couscous|polenta|breadcrumbs|panko|crackers|cornstarch|bouillon|stock concentrate|dried lentils|dried beans|dried herbs|dried (?:basil|oregano|thyme|rosemary|dill|parsley)|cinnamon|curry powder|ground cumin|ground coriander|chilli powder|chilli flakes|paprika|cayenne(?: pepper)?|garlic powder|onion powder|celery seed|fennel seeds?|Italian seasoning|taco seasoning|yeast|soy sauce|vinegar|honey|mustard|hot sauce|curry paste|gochujang paste)\b/i;
+    const unsuitableCarryover = /\b(fresh|cooked|prepared|green beans|(?:pasta|pizza|tomato) sauce|bulk sweet Italian sausage)\b/i;
     const carryoverKey = name => {
       const label = canonicalIngredient(name);
       return durableBulk.test(label) && !unsuitableCarryover.test(label)
@@ -294,6 +444,12 @@
       }
       return keys;
     };
+    const commonAlternative = name => [
+      [
+        /\bPeppadew peppers?\b/i,
+        "mild pickled cherry peppers, or jarred roasted red peppers with a splash of vinegar"
+      ]
+    ].find(([pattern]) => pattern.test(name))?.[1] || "";
     const unitAliases = {
       tsp: ["volume", 5], teaspoon: ["volume", 5], teaspoons: ["volume", 5],
       tbsp: ["volume", 15], tablespoon: ["volume", 15], tablespoons: ["volume", 15],
@@ -360,7 +516,8 @@
     const formatNumber = value => new Intl.NumberFormat("en-CA", {
       maximumFractionDigits: 2
     }).format(Math.round(value * 100) / 100);
-    const formatMeasure = measure => {
+    const liquidIngredient = /\b(milk|broth|stock|cream|juice|vinegar|sauce|yogurt)\b/i;
+    const formatMeasure = (measure, label = "") => {
       if (measure.dimension === "mass") {
         return measure.value >= 1000
           ? `${formatNumber(measure.value / 1000)} kg`
@@ -368,6 +525,9 @@
       }
       if (measure.dimension === "volume") {
         if (measure.value >= 1000) return `${formatNumber(measure.value / 1000)} L`;
+        if (measure.value >= 250 && liquidIngredient.test(label)) {
+          return `${formatNumber(measure.value)} ml`;
+        }
         if (measure.value >= 120) {
           const cups = measure.value / 240;
           return `${formatNumber(cups)} cup${cups === 1 ? "" : "s"}`;
@@ -408,7 +568,10 @@
       if (!label) return;
       const key = label.toLowerCase();
       const item = items.get(key) || {
-        label, category: groceryCategory(label), measures: new Map(),
+        label,
+        category: carryoverKey(label) ? "Bulk" : groceryCategory(label),
+        alternative: commonAlternative(label),
+        measures: new Map(),
         sources: {lunch: 0, dinner: 0, breakfast: 0}
       };
       const current = item.measures.get(measure.dimension) || {...measure, value: 0};
@@ -417,7 +580,9 @@
       item.sources[source] = source === "breakfast" ? item.sources[source] + 1 : 5;
       items.set(key, item);
     };
-    const groceryAmount = item => [...item.measures.values()].map(formatMeasure).join(" + ");
+    const groceryAmount = item => [...item.measures.values()]
+      .map(measure => formatMeasure(measure, item.label))
+      .join(" + ");
     const grocerySources = item => [
       item.sources.lunch && "5 lunches",
       item.sources.dinner && "5 dinners",
@@ -444,6 +609,8 @@
     console.assert(canonicalIngredient("onion powder") === "Onion powder", "onion powder must not merge with fresh onions");
     console.assert(canonicalIngredient("(28 ounce) can crushed tomatoes") === "Canned tomatoes", "canned tomatoes need a distinct aisle label");
     console.assert(formatMeasure(measureFor({name: "oz. green beans", value: 12.5, unit: null})) === "354.37 g", "leading source units should remain measurable");
+    console.assert(formatMeasure({dimension: "volume", value: 775}, "Coconut milk") === "775 ml", "large liquid totals should stay metric");
+    console.assert(formatMeasure({dimension: "volume", value: 319.2}, "Rolled oats") === "1.33 cups", "dry bulk volumes should stay in cups");
     console.assert(formatMeasure(measureFor({name: "(15-ounce) can coconut milk", value: 1.25, unit: null})) === "1.25 \u00d7 15 oz cans \u00b7 buy 2", "package quantities should show exact use and whole-item purchase");
     console.assert(packageDescription("6.5 ounce") === "6.5 oz", "package decimals must be preserved");
     console.assert(formatMeasure(measureFor({name: "medium onion", value: 2.5, unit: null})) === "2.5 \u00b7 buy 3", "fractional counts should preserve exact use and purchase quantity");
@@ -464,6 +631,11 @@
     console.assert(groceryCategory("beef broth") === "Cans & dry goods", "broth is a dry-goods aisle item");
     console.assert(groceryCategory("canned tomatoes") === "Cans & dry goods", "canned tomatoes are not fresh produce");
     console.assert(groceryCategory("fresh rosemary") === "Produce", "fresh herbs belong in produce");
+    console.assert(carryoverKey("rigatoni pasta") === "rigatoni pasta", "dry pasta belongs in Bulk");
+    console.assert(carryoverKey("soy sauce") === "soy sauce", "durable condiments belong in Bulk");
+    console.assert(carryoverKey("prepared pasta sauce") === null, "prepared sauces do not belong in Bulk");
+    console.assert(carryoverKey("bulk sweet Italian sausage") === null, "bulk meat does not belong in Bulk");
+    console.assert(Object.keys(techniqueLessons).length === 8, "each planned technique needs a guide");
 
     function mealLink(recipe, label, day, dayIndex) {
       const query = new URLSearchParams({
@@ -479,6 +651,22 @@
       </a>`;
     }
 
+    function renderTechniqueLesson(recipe) {
+      const name = technique(recipe);
+      const lesson = techniqueLessons[name];
+      if (!lesson) return;
+      lessonTitle.textContent = name.replace(/\b\w/g, letter => letter.toUpperCase());
+      lessonPrinciple.textContent = lesson.principle;
+      lessonSteps.innerHTML = lesson.steps
+        .map(step => `<li>${escapeHTML(step)}</li>`)
+        .join("");
+      lessonCue.textContent = lesson.cue;
+      lessonMistake.textContent = lesson.mistake;
+      lessonSources.innerHTML = lesson.sources
+        .map(([label, href]) => `<a href="${href}" target="_blank" rel="noreferrer">${escapeHTML(label)}</a>`)
+        .join(" · ");
+    }
+
     function render() {
       const a = recipes.find(recipe => recipe.path === mealA.value);
       const b = recipes.find(recipe => recipe.path === mealB.value);
@@ -486,6 +674,7 @@
       const breakfastDays = breakfastsFor(breakfastPlan);
       if (!a || !b) return;
       skill.textContent = technique(b).replace(/\b\w/g, letter => letter.toUpperCase());
+      renderTechniqueLesson(b);
       batchNote.innerHTML = `Sunday: cook
         <a href="${root}${a.path}?servings=5&week=${cycleWeek}">${escapeHTML(a.title)} · 5 lunches</a>
         and <a href="${root}${b.path}?servings=5&week=${cycleWeek}">${escapeHTML(b.title)} · 5 dinners</a>.
@@ -521,7 +710,7 @@
         (result[item.category] ||= []).push(item);
         return result;
       }, {});
-      latestGroceries = ["Produce","Meat & seafood","Dairy & eggs","Bakery","Frozen","Cans & dry goods"]
+      latestGroceries = ["Produce","Meat & seafood","Dairy & eggs","Bakery","Frozen","Cans & dry goods","Bulk"]
         .filter(category => grouped[category]?.length)
         .map(category => [category, grouped[category].sort((x, y) => x.label.localeCompare(y.label))]);
       const previousBulk = priorBulkKeys();
@@ -531,11 +720,11 @@
         item.carried = item.carryover && !carryoverDismissed.has(key);
       }));
       groceries.innerHTML = latestGroceries
-        .map(([category, items]) => `<section class="grocery-group${items.length > 10 ? " is-long" : ""}"><h3>${category}</h3><ul>${
+        .map(([category, items]) => `<section class="grocery-group${items.length > 10 ? " is-long" : ""}${category === "Bulk" ? " is-bulk" : ""}"><h3>${category}</h3><ul>${
           items.map(item => {
             const key = encodeURIComponent(item.label.toLowerCase());
             return `<li><label><input type="checkbox" data-key="${key}" data-carryover="${item.carryover}" data-carried="${item.carried}" ${checked.has(key) || item.carried ? "checked" : ""}>
-              <span class="grocery-item"><strong>${escapeHTML(item.label)}</strong><span>${groceryAmount(item)}</span><small>${grocerySources(item)}<span class="carryover-note"${item.carried ? "" : " hidden"}> · carryover assumed</span></small></span>
+              <span class="grocery-item"><strong>${escapeHTML(item.label)}</strong><span>${groceryAmount(item)}</span><small>${grocerySources(item)}${item.alternative ? `<span class="substitute-note">Common swap: ${escapeHTML(item.alternative)}</span>` : ""}<span class="carryover-note"${item.carried ? "" : " hidden"}> · carryover assumed</span></small></span>
             </label></li>`;
           }).join("")
         }</ul></section>`).join("");
@@ -577,6 +766,12 @@
     const groceries = document.getElementById("groceries");
     const batchNote = document.getElementById("batch-note");
     const skill = document.getElementById("skill");
+    const lessonTitle = document.getElementById("lesson-title");
+    const lessonPrinciple = document.getElementById("lesson-principle");
+    const lessonSteps = document.getElementById("lesson-steps");
+    const lessonCue = document.getElementById("lesson-cue");
+    const lessonMistake = document.getElementById("lesson-mistake");
+    const lessonSources = document.getElementById("lesson-sources");
     const groceryProgress = document.getElementById("grocery-progress");
     const reroll = document.getElementById("reroll");
     const cycle = document.getElementById("cycle");
@@ -616,7 +811,7 @@
       render();
     }
 
-    fetch(root + "static/search-index.json").then(response => response.json()).then(data => {
+    fetch(root + "static/planner-index.json").then(response => response.json()).then(data => {
       recipes = data;
       const byCost = ([a], [b]) => costScore(a) - costScore(b);
       const storageReady = data.filter(recipe =>
@@ -625,6 +820,7 @@
       easy = storageReady.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Approachable").sort(byCost);
       stretch = storageReady.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Stretch").sort(byCost);
       console.assert(easy.length >= 8 && stretch.length >= 8, "eight weeks need unique planner-ready choices");
+      console.assert(stretch.every(([recipe]) => techniqueLessons[technique(recipe)]), "every stretch recipe needs a technique guide");
       easy.forEach(([recipe]) => {
         mealA.append(option(recipe));
       });
@@ -656,7 +852,7 @@
     document.getElementById("copy-groceries").addEventListener("click", async event => {
       const text = latestGroceries
         .map(([category, items]) => `${category}\n${
-          items.map(item => `- ${item.label}: ${groceryAmount(item)} (${grocerySources(item)}${item.carried ? "; carryover assumed" : ""})`).join("\n")
+          items.map(item => `- ${item.label}: ${groceryAmount(item)} (${grocerySources(item)}${item.alternative ? `; common swap: ${item.alternative}` : ""}${item.carried ? "; carryover assumed" : ""})`).join("\n")
         }`)
         .join("\n\n");
       try {
