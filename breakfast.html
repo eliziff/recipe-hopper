@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Breakfast · Recipe Hopper</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/recipe-hopper/static/css/output.css">
   <link rel="stylesheet" href="/recipe-hopper/static/css/custom-styles.css">
 </head>
@@ -13,6 +14,7 @@
     <header>
       <p class="eyebrow" id="day">Breakfast · 1 adult portion</p>
       <span class="breakfast-difficulty" id="difficulty">Easy</span>
+      <span class="breakfast-skill" id="breakfast-skill" hidden></span>
       <h1 id="title"></h1>
       <p>Cook fresh in the morning. These quantities feed one adult.</p>
     </header>
@@ -26,15 +28,41 @@
         <p id="method"></p>
       </section>
     </div>
+    <details class="technique-lesson breakfast-technique" id="technique-guide" open hidden>
+      <summary>
+        <span>Technique guide</span>
+        <strong id="guide-title"></strong>
+      </summary>
+      <div class="lesson-content">
+        <p class="lesson-principle" id="guide-principle"></p>
+        <div>
+          <h3>Method</h3>
+          <ol id="guide-steps"></ol>
+        </div>
+        <aside class="lesson-notes">
+          <h3>Look for</h3>
+          <p id="guide-cue"></p>
+          <h3>Common mistake</h3>
+          <p id="guide-mistake"></p>
+        </aside>
+        <p class="lesson-sources" id="guide-sources"></p>
+      </div>
+    </details>
   </main>
+  <script src="/recipe-hopper/static/js/curriculum.js"></script>
   <script src="/recipe-hopper/static/js/breakfast-data.js"></script>
   <script>
     (() => {
-      const {plans, forPlan, method} = window.RECIPE_HOPPER_BREAKFASTS;
+      const {
+        WEEK_COUNT,
+        breakfastReviewWeeks,
+        breakfastPracticeForWeek
+      } = window.RECIPE_HOPPER_CURRICULUM;
+      const {forPlan, resolvePlan, defaultForWeek, lesson, method} = window.RECIPE_HOPPER_BREAKFASTS;
       const params = new URLSearchParams(location.search);
-      const week = Math.min(8, Math.max(1, Number(params.get("week")) || 1));
+      const week = Math.min(WEEK_COUNT, Math.max(1, Number(params.get("week")) || 1));
       const dayIndex = Math.min(6, Math.max(0, Number(params.get("day")) || 0));
-      const plan = plans.find(item => item.id === params.get("plan")) || plans[(week - 1) % plans.length];
+      const plan = resolvePlan(params.get("plan"), week) || defaultForWeek(week);
       const breakfast = forPlan(plan)[dayIndex];
       const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
       const number = value => new Intl.NumberFormat("en-CA", {maximumFractionDigits: 2}).format(value);
@@ -49,11 +77,36 @@
       const difficulty = document.getElementById("difficulty");
       difficulty.textContent = breakfast.difficulty;
       difficulty.classList.toggle("is-hard", breakfast.difficulty === "Hard");
+      const breakfastSkill = document.getElementById("breakfast-skill");
+      breakfastSkill.hidden = !breakfast.skill;
+      const practice = breakfast.skill ? breakfastPracticeForWeek(week) : null;
+      const review = practice
+        ? practice.stage
+          ? `Review ${practice.stage} of ${breakfastReviewWeeks.length - 1} · last Week ${practice.previousWeek}`
+          : `New · next Week ${practice.nextWeek}`
+        : "";
+      breakfastSkill.textContent = breakfast.skill
+        ? `Technique · ${breakfast.skill.replace(/\b\w/g, letter => letter.toUpperCase())}${review ? ` · ${review}` : ""}`
+        : "";
       document.getElementById("title").textContent = breakfast.meal;
       document.getElementById("ingredients").innerHTML = breakfast.ingredients.map(ingredient =>
         `<li><span>${escapeHTML(ingredientLabel(ingredient[0]))}</span><strong>${number(ingredient[1])}${ingredient[2] ? ` ${escapeHTML(ingredient[2])}` : ""}</strong></li>`
       ).join("");
       document.getElementById("method").textContent = method(breakfast);
+      const guide = document.getElementById("technique-guide");
+      guide.hidden = !breakfast.skill;
+      if (breakfast.skill) {
+        document.getElementById("guide-title").textContent = lesson.name.replace(/\b\w/g, letter => letter.toUpperCase());
+        document.getElementById("guide-principle").textContent = lesson.principle;
+        document.getElementById("guide-steps").innerHTML = lesson.steps
+          .map(step => `<li>${escapeHTML(step)}</li>`)
+          .join("");
+        document.getElementById("guide-cue").textContent = lesson.cue;
+        document.getElementById("guide-mistake").textContent = lesson.mistake;
+        document.getElementById("guide-sources").innerHTML = lesson.sources
+          .map(([label, url]) => `<a href="${escapeHTML(url)}" target="_blank" rel="noreferrer">${escapeHTML(label)}</a>`)
+          .join(" · ");
+      }
     })();
   </script>
 </body>

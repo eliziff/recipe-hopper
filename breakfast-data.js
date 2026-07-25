@@ -1,4 +1,5 @@
 (() => {
+  const {breakfastReviewWeeks} = window.RECIPE_HOPPER_CURRICULUM;
   const easy = (meal, ingredients) => ({
     difficulty: "Easy",
     meal,
@@ -9,7 +10,39 @@
       ["whole-grain bread", 2, "slices"]
     ]
   });
-  const hard = (meal, ingredients) => ({difficulty: "Hard", meal, ingredients});
+  const hard = (meal, ingredients, skill = "") => ({
+    difficulty: "Hard", meal, ingredients, skill
+  });
+  const shakshuka = hard("Chickpea & olive shakshuka + toast", [
+    ["Eggs", 2],
+    ["canned tomatoes", 1, "cup"],
+    ["canned chickpeas", .5, "cup"],
+    ["pitted olives", 2, "tbsp"],
+    ["red bell pepper", .5],
+    ["yellow onion", .25],
+    ["garlic cloves", 1, "clove"],
+    ["ground cumin", .5, "tsp"],
+    ["smoked paprika", .5, "tsp"],
+    ["whole-grain bread", 2, "slices"],
+    ["olive oil", 1, "tsp"]
+  ], "gentle egg poaching");
+  const lesson = Object.freeze({
+    name: "gentle egg poaching",
+    principle: "A thick sauce supports the eggs while low heat cooks them from below and trapped steam sets the tops, giving the whites time to firm before the yolks harden.",
+    steps: [
+      "Reduce the tomato mixture until a spoon dragged across the pan leaves a clear trail for a moment. A watery sauce cannot support the eggs.",
+      "Lower the heat until the sauce bubbles lazily rather than boiling. Use the back of a spoon to make two wells that keep the eggs separated.",
+      "Crack each egg into a small cup first, then slide it close to the sauce so the yolk stays intact.",
+      "Cover the pan. Start checking at 5 minutes; rotate the pan once if your burner heats unevenly.",
+      "Remove the pan when no translucent white remains but the yolks still wobble. Residual heat will keep cooking them."
+    ],
+    cue: "Opaque, softly set whites; gently wobbling yolks; and slow bubbles around—not through—the eggs.",
+    mistake: "Boiling sauce toughens the bottoms before the tops set. A thin sauce lets the eggs spread, while waiting for firm yolks usually overcooks the whites.",
+    sources: [
+      ["Egg Farmers of Canada: shakshuka for one", "https://eggs.ca/recipes/shakshuka-for-one/"],
+      ["American Egg Board: basic poached eggs", "https://www.incredibleegg.org/recipe/basic-poached-eggs/"]
+    ]
+  });
 
   const plans = [
     {
@@ -59,8 +92,31 @@
     (_, index) => index % 2 ? plan.second : plan.first
   );
 
+  const reviewPlanId = "spaced-shakshuka";
+  const reviewPlanForWeek = value => {
+    const week = Number(value) || 1;
+    const base = plans[(week - 1) % plans.length];
+    return {
+      id: reviewPlanId,
+      name: `${base.name.split(" + ")[0]} + chickpea-olive shakshuka`,
+      review: true,
+      first: base.first,
+      second: shakshuka
+    };
+  };
+  const resolvePlan = (id, week) => id === reviewPlanId
+    ? reviewPlanForWeek(week)
+    : plans.find(plan => plan.id === id);
+  const defaultForWeek = value => {
+    const week = Number(value) || 1;
+    return breakfastReviewWeeks.includes(week)
+      ? reviewPlanForWeek(week)
+      : plans[(week - 1) % plans.length];
+  };
+
   const method = breakfast => {
     if (breakfast.meal.includes("smoothie")) return "Blend the smoothie ingredients until smooth. Toast the bread and serve.";
+    if (breakfast.meal.includes("shakshuka")) return "Soften the pepper and onion in olive oil. Add the garlic, cumin and paprika; stir for 30 seconds. Add the tomatoes, chickpeas and olives, then simmer until a spoon leaves a trail through the sauce. Make two wells, crack in the eggs, cover and cook for 5–8 minutes, until the whites are set and the yolks are still soft. Serve with toast.";
     if (breakfast.meal.includes("oatmeal")) return "Simmer the oats and milk for 5 minutes. Stir in or top with the remaining ingredients.";
     if (breakfast.meal.includes("omelette")) return "Wilt the spinach in a lightly oiled pan. Add beaten eggs, scatter over the cheese, fold when nearly set, and serve with toast.";
     if (breakfast.meal.includes("quesadilla")) return "Soft-scramble the eggs. Fill the tortilla with eggs and cheese, fold, and toast both sides in the pan. Serve with salsa.";
@@ -71,5 +127,13 @@
     return "Add everything to a bowl and serve.";
   };
 
-  window.RECIPE_HOPPER_BREAKFASTS = Object.freeze({plans, forPlan, method});
+  window.RECIPE_HOPPER_BREAKFASTS = Object.freeze({
+    plans,
+    reviewPlanId,
+    forPlan,
+    resolvePlan,
+    defaultForWeek,
+    lesson,
+    method
+  });
 })();

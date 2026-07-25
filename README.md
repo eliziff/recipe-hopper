@@ -1,13 +1,13 @@
 # Recipe Hopper
 
 Recipe Hopper is a static [Cooklang](https://cooklang.org/) recipe catalogue
-and eight-week meal planner for one adult. It keeps 306 complete lunch and
+and 32-week meal planner for one adult. It keeps 306 complete lunch and
 dinner dishes in one flat collection, without grouping them by source.
 
 A recipe can enter the planner only when its source provides a verifiable
 yield and its directions have been checked against the scaled ingredient list.
 Twenty-two catalogue entries have verified yields; 16 are currently curated
-for the eight-week planner. CookCLI scales planned recipes to a five-portion
+for the programmatic planner. CookCLI scales planned recipes to a five-portion
 Sunday batch. The rest remain searchable and readable, but are not used for
 quantity-driven plans.
 
@@ -18,12 +18,21 @@ quantity-driven plans.
 - Two batches provide five weekday lunches and five weekday dinners.
 - Exactly two quick breakfasts—one Easy and one Hard—alternate across the seven
   days, are made fresh daily, and are shopped for on Sunday.
+- Chickpea-and-olive shakshuka practises gentle egg poaching on an expanding
+  cross-week schedule.
 - Every meal card opens its exact recipe at the quantity needed for one adult.
-- Pairing favours shared ingredients, while the second dish introduces the
-  week's cooking technique.
+- Five explicitly tagged complex techniques return on widening review
+  intervals; routine dishes and simple breakfasts never enter the review queue.
+- Lunch pairing is generated from cost, ingredient overlap, and recent use.
 - The grocery list sums and deduplicates recipe quantities by aisle. Durable
   bulk ingredients from earlier weeks are carried forward and pre-checked.
 - Later-week portions are selected for freezer and reheating suitability.
+
+The review ladder uses widening target gaps and defers collisions to the next
+open week. This follows evidence that spacing improves long-term retention and
+that expanding and equal schedules can both be effective:
+[Cepeda et al.](https://journals.sagepub.com/doi/10.1111/j.1467-9280.2008.02209.x)
+and [Kang et al.](https://pubmed.ncbi.nlm.nih.gov/24744260/).
 
 ## Build locally
 
