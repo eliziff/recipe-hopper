@@ -722,8 +722,9 @@ main img.rounded-xl {
 }
 
 .day-card {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto repeat(3, minmax(5.25rem, 1fr));
+  gap: .5rem;
   min-width: 0;
   padding: .8rem;
   border: 1px solid var(--line);
@@ -742,6 +743,7 @@ main img.rounded-xl {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 7rem repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto;
   align-items: stretch;
   gap: .55rem;
 }
@@ -769,9 +771,10 @@ main img.rounded-xl {
 }
 
 .meal-slot {
-  margin-top: .5rem;
+  margin-top: 0;
   padding: .7rem;
   min-height: 5.25rem;
+  border: 1px solid rgb(69 98 75 / 10%);
   border-radius: .5rem;
   background: var(--soft);
   font-size: .84rem;
@@ -825,7 +828,10 @@ main img.rounded-xl {
 
 .meal-slot a:hover > span,
 .meal-link:hover > span { text-decoration: underline; }
-.breakfast-slot { background: #f4efe7; }
+.breakfast-slot {
+  border-color: rgb(131 85 47 / 14%);
+  background: #f4efe7;
+}
 .breakfast-slot strong { color: #83552f; }
 .breakfast-hard {
   border-left: 3px solid #83552f;
@@ -966,12 +972,14 @@ main img.rounded-xl {
 .grocery-panel ul { columns: auto; }
 .grocery-group.is-long ul { columns: 3; column-gap: 1.25rem; }
 .grocery-panel li {
-  margin-bottom: .5rem;
+  margin: 0;
+  padding: .5rem 0;
   break-inside: avoid;
   font-size: .86rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
+.grocery-panel li + li { border-top: 1px solid rgb(69 98 75 / 11%); }
 .grocery-panel label {
   display: flex;
   align-items: flex-start;
@@ -1187,11 +1195,12 @@ main img.rounded-xl {
   .week-grid { grid-template-columns: 1fr; }
   .day-card {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    grid-template-rows: auto repeat(3, auto);
     gap: .5rem;
     padding: .7rem;
   }
-  .day-card h2 { grid-column: 1 / -1; }
+  .day-card h2 { grid-column: auto; }
   .meal-slot {
     min-width: 0;
     min-height: 5.2rem;
@@ -1201,9 +1210,10 @@ main img.rounded-xl {
   .day-card.is-prep-day,
   .day-card:last-child {
     grid-column: auto;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    grid-template-rows: auto repeat(3, auto);
   }
-  .breakfast-slot { grid-column: 1 / -1; }
+  .breakfast-slot { grid-column: auto; }
   .day-card.is-prep-day h2,
   .day-card:last-child h2 {
     display: block;
