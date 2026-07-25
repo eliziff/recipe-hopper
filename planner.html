@@ -1352,7 +1352,10 @@
 
     fetch(root + "static/planner-index.json").then(response => response.json()).then(data => {
       recipes = data;
-      const byCost = ([a], [b]) => costScore(a) - costScore(b);
+      const byCost = ([a], [b]) =>
+        costScore(a) - costScore(b)
+        || a.title.localeCompare(b.title)
+        || a.path.localeCompare(b.path);
       const storageReady = data.filter(recipe =>
         recipe.plannerReady && freezerFriendly(recipe) && shoppingComplete(recipe)
       );

@@ -22,7 +22,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Install CookCLI
         run: |
-          curl -fsSL https://github.com/cooklang/CookCLI/releases/latest/download/cook-x86_64-unknown-linux-gnu.tar.gz -o "${RUNNER_TEMP}/cook.tar.gz"
+          curl -fsSL https://github.com/cooklang/CookCLI/releases/download/v0.32.1/cook-x86_64-unknown-linux-gnu.tar.gz -o "${RUNNER_TEMP}/cook.tar.gz"
           tar -xzf "${RUNNER_TEMP}/cook.tar.gz" -C "${RUNNER_TEMP}"
           chmod +x "${RUNNER_TEMP}/cook"
       - name: Build
