@@ -1,14 +1,4 @@
 (() => {
-  const base = [
-    {meal: "Apple-cinnamon oatmeal", ingredients: [["rolled oats", .5, "cup"], ["milk", 1, "cup"], ["Apples", 1], ["cinnamon", .5, "tsp"]]},
-    {meal: "Scrambled eggs & whole-grain toast", ingredients: [["Eggs", 3], ["whole-grain bread", 2, "slices"]]},
-    null,
-    {meal: "Greek yogurt, banana & oats", ingredients: [["Greek yogurt", 1, "cup"], ["Bananas", 1], ["rolled oats", .33, "cup"]]},
-    {meal: "Egg & cheese breakfast wrap", ingredients: [["Eggs", 2], ["shredded cheddar", .25, "cup"], ["flour tortillas", 1]]},
-    null,
-    {meal: "Peanut-butter banana oatmeal", ingredients: [["rolled oats", .5, "cup"], ["milk", 1, "cup"], ["Bananas", 1], ["peanut butter", 2, "tbsp"]]}
-  ];
-
   const plans = [
     {
       id: "berry-cocoa", name: "Berry + chocolate banana",
@@ -52,8 +42,9 @@
     }
   ];
 
-  const forPlan = plan => base.map((breakfast, index) =>
-    index === 2 ? plan.first : index === 5 ? plan.second : breakfast
+  const forPlan = plan => Array.from(
+    {length: 7},
+    (_, index) => index % 2 ? plan.second : plan.first
   );
 
   const method = breakfast => {

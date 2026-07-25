@@ -616,10 +616,12 @@
     console.assert(formatMeasure(measureFor({name: "medium onion", value: 2.5, unit: null})) === "2.5 \u00b7 buy 3", "fractional counts should preserve exact use and purchase quantity");
     console.assert(measureFor({name: "onion", value: 1.25, unit: "unit"}).dimension === "count", "generic units must merge with unitless counts");
     console.assert(breakfastPlans.length === 8, "each week should have a breakfast rotation");
-    console.assert(breakfastPlans.every(plan =>
-      breakfastsFor(plan).filter(day => day.meal.includes("Whey smoothie")).length === 2
-      && plan.first.meal !== plan.second.meal
-    ), "each rotation should have two distinct Whey smoothies");
+    console.assert(breakfastPlans.every(plan => {
+      const days = breakfastsFor(plan);
+      return days.length === 7
+        && new Set(days.map(day => day.meal)).size === 2
+        && days.every((day, index) => !index || day.meal !== days[index - 1].meal);
+    }), "each week should alternate exactly two breakfasts");
     console.assert(groceryCategory("Chicken breasts") === "Meat & seafood", "chicken should be grouped as meat");
     console.assert(groceryCategory("Carrots") === "Produce", "plural produce should stay in produce");
     console.assert(groceryCategory("Cauliflower") === "Produce", "cauliflower should stay in produce");

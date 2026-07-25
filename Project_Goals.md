@@ -18,8 +18,10 @@ large recipe collection into one practical weekly cooking routine.
   preserving a five-portion Sunday batch view.
 - Prefer meals that hold well after cooking; refrigerate Monday and Tuesday
   portions and freeze Wednesday through Friday portions on Sunday.
-- Make one quick, easy breakfast fresh every day.
-- Include two distinct Whey-protein smoothie components in each week.
+- Alternate exactly two quick, easy breakfasts across the seven days and make
+  each one fresh that morning.
+- Keep the two weekly breakfasts distinct Whey-protein smoothie-and-toast
+  options.
 - Pair one easy recipe with one skill-building recipe and introduce one
   deliberate cooking technique each week.
 
