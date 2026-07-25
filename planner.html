@@ -520,7 +520,7 @@
       let swaps = 0;
       const affectedOverlap = overlapLookupFor(schedule);
       for (let pass = 0; pass < 32; pass += 1) {
-        const candidates = [];
+        let best = null;
         for (let left = 0; left < schedule.length - 1; left += 1) {
           for (let right = left + 1; right < schedule.length; right += 1) {
             if (schedule[left].a.path === schedule[right].a.path) continue;
@@ -528,62 +528,28 @@
             [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
             if (validLunchSchedule(schedule)) {
               const candidateOverlap = overlap - before + affectedOverlap([left, right]);
-              if (candidateOverlap > overlap) {
-                candidates.push({left, right, overlap: candidateOverlap});
-              }
-            }
-            [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
-          }
-        }
-        candidates.sort((left, right) =>
-          right.overlap - left.overlap || left.left - right.left || left.right - right.right
-        );
-        let accepted = null;
-        for (const candidate of candidates) {
-          [schedule[candidate.left].a, schedule[candidate.right].a] =
-            [schedule[candidate.right].a, schedule[candidate.left].a];
-          const candidateWaste = packageWasteScore(schedule);
-          if (candidateWaste <= waste + 0.0001) {
-            accepted = {...candidate, waste: candidateWaste};
-            break;
-          }
-          [schedule[candidate.left].a, schedule[candidate.right].a] =
-            [schedule[candidate.right].a, schedule[candidate.left].a];
-        }
-        if (!accepted) break;
-        overlap = accepted.overlap;
-        waste = accepted.waste;
-        score = overlap - 5 * waste;
-        swaps += 1;
-      }
-      let bestComposite = null;
-      for (let left = 0; left < schedule.length - 1; left += 1) {
-        for (let right = left + 1; right < schedule.length; right += 1) {
-          if (schedule[left].a.path === schedule[right].a.path) continue;
-          const before = affectedOverlap([left, right]);
-          [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
-          if (validLunchSchedule(schedule)) {
-            const candidateOverlap = overlap - before + affectedOverlap([left, right]);
-            if (candidateOverlap >= baseline.overlap) {
               const candidateWaste = packageWasteScore(schedule);
               const candidateScore = candidateOverlap - 5 * candidateWaste;
-              if (candidateWaste <= waste + 0.0001
-                  && candidateScore > score + 0.001
-                  && (!bestComposite || candidateScore > bestComposite.score + 0.001)) {
-                bestComposite = {
+              if (candidateScore > score + 0.001
+                  && (!best
+                    || candidateScore > best.score + 0.001
+                    || (Math.abs(candidateScore - best.score) <= 0.001
+                      && (candidateOverlap > best.overlap
+                        || (candidateOverlap === best.overlap
+                          && candidateWaste < best.waste - 0.0001))))) {
+                best = {
                   left, right, score: candidateScore,
                   overlap: candidateOverlap, waste: candidateWaste
                 };
               }
             }
+            [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
           }
-          [schedule[left].a, schedule[right].a] = [schedule[right].a, schedule[left].a];
         }
-      }
-      if (bestComposite) {
-        [schedule[bestComposite.left].a, schedule[bestComposite.right].a] =
-          [schedule[bestComposite.right].a, schedule[bestComposite.left].a];
-        ({score, overlap, waste} = bestComposite);
+        if (!best) break;
+        [schedule[best.left].a, schedule[best.right].a] =
+          [schedule[best.right].a, schedule[best.left].a];
+        ({score, overlap, waste} = best);
         swaps += 1;
       }
       scheduleOptimization = {baseline, optimized: {score, overlap, waste}, swaps};
@@ -658,25 +624,6 @@
       return durableBulk.test(label) && !unsuitableCarryover.test(label)
         ? label.toLowerCase()
         : null;
-    };
-    const priorBulkKeys = () => {
-      const keys = new Set();
-      for (let number = 1; number < cycleWeek; number += 1) {
-        const selection = selectionForWeek(number);
-        [selection.a, selection.b].filter(Boolean).forEach(recipe =>
-          recipe.ingredientDetails.forEach(ingredient => {
-            const key = carryoverKey(ingredient.name);
-            if (key) keys.add(key);
-          })
-        );
-        breakfastsFor(selection.breakfast).forEach(breakfast =>
-          breakfast.ingredients.forEach(ingredient => {
-            const key = carryoverKey(ingredient[0]);
-            if (key) keys.add(key);
-          })
-        );
-      }
-      return keys;
     };
     const commonAlternative = name => [
       [
@@ -820,36 +767,41 @@
       return finish({dimension: `unit:${unit}`, unit, value: ingredient.value});
     };
     // Common Canadian package sizes used only for schedule scoring and carryover.
+    // keepWeeks describes opened storage in weekly steps; zero never crosses a Sunday shop.
     const packageAssumptions = [
       {pattern: /^Eggs$/i, dimension: "count", size: 12, keepWeeks: 4, weight: .5, carry: false},
       {pattern: /^Milk$/i, dimension: "volume", size: 2000, keepWeeks: 2, weight: .5, carry: false},
       {pattern: /^Whey protein powder$/i, dimension: "count:scoop", size: 60, keepWeeks: 26, weight: .25},
       {pattern: /^Whole-grain bread$/i, dimension: "count:slice", size: 20, keepWeeks: 8, weight: .5},
       {pattern: /^Brown rice$/i, dimension: "mass", size: 907, keepWeeks: 26, weight: .5},
+      {pattern: /^Rice$/i, dimension: "mass", size: 907, keepWeeks: 26, weight: .5},
       {pattern: /^Rolled oats$/i, dimension: "volume", size: 3000, keepWeeks: 26, weight: .25},
       {pattern: /^Lasagna noodles$/i, dimension: "count", size: 12, keepWeeks: 26, weight: .5},
       {pattern: /^Orzo$/i, dimension: "volume", size: 600, keepWeeks: 26, weight: .5},
       {pattern: /^Panko breadcrumbs$/i, dimension: "volume", size: 720, keepWeeks: 26, weight: .5},
       {pattern: /^Instant yeast$/i, dimension: "mass", size: 113, keepWeeks: 26, weight: .25},
+      {pattern: /^(?:Curry powder|Paprika|Italian seasoning)$/i, dimension: "volume", size: 100, keepWeeks: 52, weight: .25},
+      {pattern: /^Tikka masala curry paste$/i, dimension: "volume", size: 400, keepWeeks: 3, weight: 1},
+      {pattern: /^(?:Soy sauce|Rice vinegar|Honey)$/i, dimension: "volume", size: 500, keepWeeks: 52, weight: .25},
       {pattern: /^Taco seasoning$/i, dimension: "count", size: 1, keepWeeks: 26, weight: .25},
       {pattern: /^Veggie Stock Concentrate$/i, dimension: "count", size: 1, keepWeeks: 26, weight: .25},
-      {pattern: /^Coconut milk$/i, dimension: "volume", size: 400, keepWeeks: 4, weight: 3},
-      {pattern: /^Canned green lentils$/i, dimension: "mass", size: 350, keepWeeks: 1, weight: 2},
-      {pattern: /^Canned chickpeas$/i, dimension: "volume", size: 480, keepWeeks: 1, weight: 1},
-      {pattern: /^Canned tomatoes$/i, dimension: "volume", size: 398, keepWeeks: 4, weight: 1},
-      {pattern: /^Canned tomato sauce$/i, dimension: "volume", size: 213, keepWeeks: 4, weight: 2},
-      {pattern: /^Tomato paste$/i, dimension: "mass", size: 156, keepWeeks: 8, weight: 1},
-      {pattern: /^Pasta sauce$/i, dimension: "volume", size: 650, keepWeeks: 8, weight: 2},
-      {pattern: /^Pizza sauce$/i, dimension: "volume", size: 650, keepWeeks: 8, weight: 2},
+      {pattern: /^Coconut milk$/i, dimension: "volume", size: 400, keepWeeks: 0, weight: 3},
+      {pattern: /^Canned green lentils$/i, dimension: "mass", size: 350, keepWeeks: 0, weight: 2},
+      {pattern: /^Canned chickpeas$/i, dimension: "volume", size: 480, keepWeeks: 0, weight: 1},
+      {pattern: /^Canned tomatoes$/i, dimension: "volume", size: 398, keepWeeks: 0, weight: 1},
+      {pattern: /^Canned tomato sauce$/i, dimension: "volume", size: 213, keepWeeks: 0, weight: 2},
+      {pattern: /^Tomato paste$/i, dimension: "mass", size: 156, keepWeeks: 0, weight: 1},
+      {pattern: /^Pasta sauce$/i, dimension: "volume", size: 650, keepWeeks: 0, weight: 2},
+      {pattern: /^Pizza sauce$/i, dimension: "volume", size: 650, keepWeeks: 0, weight: 2},
       {pattern: /^Jarred roasted red peppers$/i, dimension: "mass", size: 340, keepWeeks: 4, weight: 3},
       {pattern: /^Peppadew peppers in brine$/i, dimension: "volume", size: 375, keepWeeks: 4, weight: 3},
       {pattern: /^Mushrooms$/i, dimension: "mass", size: 227, keepWeeks: 0, weight: 1},
       {pattern: /^Mixed mushrooms$/i, dimension: "mass", size: 227, keepWeeks: 0, weight: 2},
       {pattern: /^Spinach$/i, dimension: "mass", size: 227, keepWeeks: 0, weight: 1},
-      {pattern: /^Ricotta$/i, dimension: "mass", size: 475, keepWeeks: 1, weight: 3},
+      {pattern: /^Ricotta$/i, dimension: "mass", size: 475, keepWeeks: 0, weight: 3},
       {pattern: /^Cream cheese$/i, dimension: "mass", size: 250, keepWeeks: 2, weight: 2},
       {pattern: /^Feta$/i, dimension: "mass", size: 200, keepWeeks: 2, weight: 2},
-      {pattern: /^Fresh mozzarella$/i, dimension: "mass", size: 200, keepWeeks: 1, weight: 2},
+      {pattern: /^Fresh mozzarella$/i, dimension: "mass", size: 200, keepWeeks: 0, weight: 2},
       {pattern: /^Provolone$/i, dimension: "mass", size: 160, keepWeeks: 2, weight: 2},
       {pattern: /^Cheddar$/i, dimension: "mass", size: 400, keepWeeks: 3, weight: 1},
       {pattern: /^Mozzarella$/i, dimension: "mass", size: 400, keepWeeks: 3, weight: 1},
@@ -857,7 +809,7 @@
       {pattern: /^Sour cream$/i, dimension: "volume", size: 250, keepWeeks: 2, weight: 2},
       {pattern: /^Greek yogurt$/i, dimension: "volume", size: 100, keepWeeks: 2, weight: 1},
       {pattern: /^Unbaked pie crusts$/i, dimension: "count", size: 2, keepWeeks: 12, weight: 2},
-      {pattern: /^(?:Fettuccine|Rigatoni pasta|Rotini|Small pasta shells|Spaghetti)$/i, dimension: "mass", size: 454, keepWeeks: 26, weight: .5}
+      {pattern: /^(?:Fettuccine|Rigatoni pasta|Rotini|(?:Small )?Pasta shells|Spaghetti)$/i, dimension: "mass", size: 454, keepWeeks: 26, weight: .5}
     ];
     const packageProfile = (label, dimension) =>
       packageAssumptions.find(profile => profile.dimension === dimension && profile.pattern.test(label));
@@ -970,8 +922,6 @@
       expirePackageLots(inventory, cycleWeek);
       return inventory;
     };
-    const hasPackageAssumption = item => [...item.measures]
-      .some(([dimension]) => Boolean(packageProfile(item.label, dimension)));
     const packageCarryoverCovers = (item, inventory) => item.measures.size > 0
       && [...item.measures].every(([dimension, measure]) => {
         const profile = packageProfile(item.label, dimension);
@@ -1107,6 +1057,26 @@
     console.assert(formatMeasure(measureFor({name: "medium onion", value: 2.5, unit: null})) === "2.5 \u00b7 buy 3", "fractional counts should preserve exact use and purchase quantity");
     console.assert(measureFor({name: "onion", value: 1.25, unit: "unit"}).dimension === "count", "generic units must merge with unitless counts");
     console.assert(measureFor({name: "lemon zest", value: 3, unit: "tsp"}).value === 1, "lemon zest should estimate whole fruit at three teaspoons each");
+    console.assert(
+      packageProfile("Taco seasoning", "count")?.size === 1
+      && packageProfile("Veggie Stock Concentrate", "count")?.size === 1
+      && packageProfile("Pasta shells", "mass")?.size === 454,
+      "discrete Bulk items must use quantity-aware package carryover"
+    );
+    console.assert([
+      ["Coconut milk", "volume"],
+      ["Canned green lentils", "mass"],
+      ["Canned chickpeas", "volume"],
+      ["Canned tomatoes", "volume"],
+      ["Canned tomato sauce", "volume"],
+      ["Tomato paste", "mass"],
+      ["Pasta sauce", "volume"],
+      ["Pizza sauce", "volume"],
+      ["Ricotta", "mass"],
+      ["Fresh mozzarella", "mass"]
+    ].every(([label, dimension]) =>
+      packageProfile(label, dimension)?.keepWeeks === 0
+    ), "opened short-lived packages must not carry into another week");
     console.assert(breakfastPlans.length >= 2, "breakfast needs a rotation");
     console.assert(breakfastPlans.every(plan => {
       const days = breakfastsFor(plan);
@@ -1265,13 +1235,9 @@
       latestGroceries = ["Produce","Meat & seafood","Dairy & eggs","Bakery","Frozen","Cans & dry goods","Bulk"]
         .filter(category => grouped[category]?.length)
         .map(category => [category, grouped[category].sort((x, y) => x.label.localeCompare(y.label))]);
-      const previousBulk = priorBulkKeys();
       const packageInventory = packageInventoryBeforeWeek();
       latestGroceries.forEach(([, items]) => items.forEach(item => {
-        item.carryover = packageCarryoverCovers(item, packageInventory)
-          || (!hasPackageAssumption(item)
-            && previousBulk.has(item.label.toLowerCase())
-            && Boolean(carryoverKey(item.label)));
+        item.carryover = packageCarryoverCovers(item, packageInventory);
         const key = encodeURIComponent(item.label.toLowerCase());
         item.carried = item.carryover && !carryoverDismissed.has(key);
       }));
@@ -1436,12 +1402,14 @@
         "lunch optimization must preserve the balanced four-use rotation"
       );
       console.assert(
-        scheduleOptimization.optimized.overlap >= scheduleOptimization.baseline.overlap
-        && scheduleOptimization.optimized.waste <= scheduleOptimization.baseline.waste + 0.0001
-        && scheduleOptimization.optimized.score >= scheduleOptimization.baseline.score
+        scheduleOptimization.optimized.score >= scheduleOptimization.baseline.score
+        && Math.abs(
+          scheduleOptimization.optimized.score
+          - (scheduleOptimization.optimized.overlap - 5 * scheduleOptimization.optimized.waste)
+        ) < 0.0001
         && scheduleOptimization.optimized.overlap === scheduleOverlapScore(defaultSchedule)
         && Math.abs(scheduleOptimization.optimized.waste - packageWasteScore(defaultSchedule)) < 0.0001,
-        "optimization must improve overlap without increasing normalized package waste"
+        "optimization must improve the combined overlap and package-waste score"
       );
       [breakfastSelect, mealA, mealB].forEach(control => control.addEventListener("change", () => {
         checked.clear();
