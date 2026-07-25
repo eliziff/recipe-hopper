@@ -18,8 +18,8 @@
 
     <section class="planner-controls grid gap-4 bg-white border border-gray-200 rounded-xl" aria-label="Plan settings">
       <label><span>Breakfast rotation</span><select id="breakfast-plan"></select></label>
-      <label><span>Easy recipe</span><select id="meal-a"></select></label>
-      <label><span>Skill recipe</span><select id="meal-b"></select></label>
+      <label><span>Easy · freezer-friendly</span><select id="meal-a"></select></label>
+      <label><span>Skill · freezer-friendly</span><select id="meal-b"></select></label>
       <button class="reroll-button" id="reroll" type="button">New pairing</button>
     </section>
 
@@ -34,6 +34,7 @@
         <div>
           <p class="eyebrow">Sunday · one trip</p>
           <h2>Grocery list</h2>
+          <p class="grocery-scope">Exact totals for 5 lunches, 5 dinners and 7 one-person breakfasts.</p>
           <p class="pantry-note">On hand: salt, sugar, flour, bread flour, water, mayonnaise, black pepper and cooking oils.</p>
         </div>
         <div class="grocery-meta">
@@ -47,6 +48,7 @@
       <div class="grocery-groups" id="groceries"></div>
     </section>
   </main>
+  <script src="/recipe-hopper/static/js/breakfast-data.js"></script>
   <script>
     const root = "/recipe-hopper/";
     const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -56,67 +58,21 @@
     let recipes = [];
     let easy = [];
     let stretch = [];
+    let defaultSchedule = [];
     let checked = new Set();
+    let carryoverDismissed = new Set();
     let latestGroceries = [];
-    const breakfastBase = [
-      {meal: "Apple-cinnamon oatmeal", ingredients: ["rolled oats", "milk", "Apples", "cinnamon"]},
-      {meal: "Scrambled eggs & whole-grain toast", ingredients: ["Eggs", "whole-grain bread"]},
-      null,
-      {meal: "Greek yogurt, banana & oats", ingredients: ["Greek yogurt", "Bananas", "rolled oats"]},
-      {meal: "Egg & cheese breakfast wrap", ingredients: ["Eggs", "shredded cheddar", "flour tortillas"]},
-      null,
-      {meal: "Peanut-butter banana oatmeal", ingredients: ["rolled oats", "milk", "Bananas", "peanut butter"]}
-    ];
-    const breakfastPlans = [
-      {
-        id: "berry-cocoa", name: "Berry + chocolate banana",
-        first: {meal: "Berry-vanilla Whey smoothie + toast", ingredients: ["frozen mixed berries", "whey protein powder", "milk", "whole-grain bread"]},
-        second: {meal: "Chocolate-banana Whey smoothie + toast", ingredients: ["Bananas", "cocoa powder", "whey protein powder", "milk", "whole-grain bread"]}
-      },
-      {
-        id: "mango-mocha", name: "Mango ginger + mocha banana",
-        first: {meal: "Mango-ginger Whey smoothie + toast", ingredients: ["frozen mango", "fresh ginger", "whey protein powder", "milk", "whole-grain bread"]},
-        second: {meal: "Mocha-banana Whey smoothie + toast", ingredients: ["Bananas", "cocoa powder", "instant coffee", "whey protein powder", "milk", "whole-grain bread"]}
-      },
-      {
-        id: "strawberry-peanut", name: "Strawberry oat + chocolate peanut",
-        first: {meal: "Strawberry-oat Whey smoothie + toast", ingredients: ["frozen strawberries", "rolled oats", "whey protein powder", "milk", "whole-grain bread"]},
-        second: {meal: "Chocolate-peanut Whey smoothie + toast", ingredients: ["cocoa powder", "peanut butter", "Bananas", "whey protein powder", "milk", "whole-grain bread"]}
-      },
-      {
-        id: "blueberry-peach", name: "Blueberry cinnamon + peach vanilla",
-        first: {meal: "Blueberry-cinnamon Whey smoothie + toast", ingredients: ["frozen blueberries", "cinnamon", "whey protein powder", "milk", "whole-grain bread"]},
-        second: {meal: "Peach-vanilla Whey smoothie + toast", ingredients: ["frozen peaches", "whey protein powder", "milk", "whole-grain bread"]}
-      },
-      {
-        id: "raspberry-banana", name: "Raspberry cocoa + banana cinnamon",
-        first: {meal: "Raspberry-cocoa Whey smoothie + toast", ingredients: ["frozen raspberries", "cocoa powder", "whey protein powder", "milk", "whole-grain bread"]},
-        second: {meal: "Banana-cinnamon Whey smoothie + toast", ingredients: ["Bananas", "cinnamon", "whey protein powder", "milk", "whole-grain bread"]}
-      },
-      {
-        id: "pineapple-cherry", name: "Pineapple vanilla + cherry cocoa",
-        first: {meal: "Pineapple-vanilla Whey smoothie + toast", ingredients: ["frozen pineapple", "whey protein powder", "milk", "whole-grain bread"]},
-        second: {meal: "Cherry-cocoa Whey smoothie + toast", ingredients: ["frozen cherries", "cocoa powder", "whey protein powder", "milk", "whole-grain bread"]}
-      },
-      {
-        id: "mixed-berry-coffee", name: "Mixed berry oat + coffee vanilla",
-        first: {meal: "Mixed-berry oat Whey smoothie + toast", ingredients: ["frozen mixed berries", "rolled oats", "whey protein powder", "milk", "whole-grain bread"]},
-        second: {meal: "Coffee-vanilla Whey smoothie + toast", ingredients: ["instant coffee", "whey protein powder", "milk", "whole-grain bread"]}
-      },
-      {
-        id: "apple-strawberry", name: "Apple cinnamon + strawberry cocoa",
-        first: {meal: "Apple-cinnamon Whey smoothie + toast", ingredients: ["Apples", "cinnamon", "whey protein powder", "milk", "whole-grain bread"]},
-        second: {meal: "Strawberry-cocoa Whey smoothie + toast", ingredients: ["frozen strawberries", "cocoa powder", "whey protein powder", "milk", "whole-grain bread"]}
-      }
-    ];
-    const breakfastsFor = plan => breakfastBase.map((breakfast, index) =>
-      index === 2 ? plan.first : index === 5 ? plan.second : breakfast
-    );
+    const {
+      plans: breakfastPlans,
+      forPlan: breakfastsFor,
+      method: breakfastMethod
+    } = window.RECIPE_HOPPER_BREAKFASTS;
 
     const save = () => {
       plans[cycleWeek] = {
         breakfast: breakfastSelect.value,
-        a: mealA.value, b: mealB.value, checked: [...checked]
+        a: mealA.value, b: mealB.value, checked: [...checked],
+        carryoverDismissed: [...carryoverDismissed]
       };
       localStorage.setItem("recipe-hopper-plans", JSON.stringify(plans));
     };
@@ -141,7 +97,7 @@
     };
     const pantryStock = [
       /^(?:(?:coarse|fine|flaky|kosher|sea|table)\s+)*salt\b/i,
-      /^(?:(?:freshly ground|ground) )?black pepper\b/i,
+      /^(?:(?:freshly ground|freshly cracked|ground) )?black pepper\b/i,
       /^pepper(?:,|$| to taste)/i,
       /^(white |brown |granulated |caster )?sugar\b/i,
       /^(all[- ]purpose |plain |bread )?flour(?:$|\s*[,;(])/i,
@@ -152,18 +108,40 @@
       /^oil(?:$| (?:for|to) )/i
     ];
     const aliases = [
+      [/\b(?:green onions?|scallions?|spring onions?)\b/i, "Green onions"],
+      [/\bonion powder\b/i, "Onion powder"],
+      [/\bred onions?\b/i, "Red onions"],
+      [/\byellow onions?\b/i, "Yellow onions"],
+      [/\bwhite onions?\b/i, "White onions"],
       [/\bonions?\b/i, "Onions"],
+      [/\bgarlic powder\b/i, "Garlic powder"],
       [/\bgarlic\b/i, "Garlic"],
+      [/\bsweet potatoes?\b/i, "Sweet potatoes"],
+      [/\byukon gold potatoes?\b/i, "Yukon Gold potatoes"],
+      [/\brusset potatoes?\b/i, "Russet potatoes"],
       [/\bpotatoes?\b/i, "Potatoes"],
       [/\bcarrots?\b/i, "Carrots"],
-      [/\bginger\b/i, "Ginger"],
+      [/\b(?:canned|chopped|crushed|diced|petite diced|whole peeled)\s+tomatoes?\b/i, "Canned tomatoes"],
+      [/\btomatoes?\b/i, "Tomatoes"],
+      [/\bground ginger\b/i, "Ground ginger"],
+      [/\bginger\b/i, "Fresh ginger"],
+      [/\bground coriander\b/i, "Ground coriander"],
+      [/\bcoriander seeds?\b/i, "Coriander seeds"],
+      [/\b(?:chilli|chile|chili) powder\b/i, "Chilli powder"],
+      [/\b(?:chilli|chile|chili) flakes?\b/i, "Chilli flakes"],
+      [/\b(?:chilli|chile|chili) paste\b/i, "Chilli paste"],
+      [/\b(?:chilli|chile|chili) sauce\b/i, "Chilli sauce"],
       [/\b(cilantro|coriander)\b/i, "Cilantro"],
+      [/\bjalapeÃ±os?\b|\bjalapenos?\b/i, "Jalapeños"],
+      [/\bpoblanos?\b/i, "Poblanos"],
       [/\b(chilli|chile|chili)\b/i, "Chillies"],
       [/\bspinach\b/i, "Spinach"],
       [/\bcauliflower\b/i, "Cauliflower"],
       [/\bgreen beans?\b/i, "Green beans"],
       [/\basparagus\b/i, "Asparagus"],
       [/\bcoconut milk\b/i, "Coconut milk"],
+      [/\b(?:plain )?greek yogurt\b/i, "Greek yogurt"],
+      [/\b(?:whole|skim|2%|1%|full-fat|low-fat)?\s*milk\b/i, "Milk"],
       [/\bcurry powder\b/i, "Curry powder"],
       [/\bturmeric\b/i, "Turmeric"],
       [/^(large )?eggs?(?:,.*)?$/i, "Eggs"],
@@ -172,11 +150,13 @@
       [/\bground beef\b/i, "Ground beef"],
       [/\bparmesan\b/i, "Parmesan"],
       [/\bmozzarella\b/i, "Mozzarella"],
+      [/\b(?:white |sharp |mature )?(?:shredded |grated )?cheddar(?: cheese)?\b/i, "Cheddar"],
       [/\b(?:corn |flour )?taco shells?\b/i, "Taco shells"]
     ];
     const categoryRules = [
       ["Frozen", /\bfrozen\b/i],
-      ["Produce", /\b(onions?|garlic|potatoes?|carrots?|broccoli|cauliflower|asparagus|green beans?|mushrooms?|zucchini|bell peppers?|green peppers?|red peppers?|yellow peppers?|orange peppers?|poblano|jalapeño|jalapeno|corn|spinach|lettuce|greens|tomatoes?|avocado|lemons?|limes?|basil|parsley|cilantro|ginger|chillies|cucumbers?|celery|apples?|bananas?|berries|mango|peaches?|pineapple|cherries)\b/i],
+      ["Cans & dry goods", /\b(ground ginger|broth|stock|bouillon|stock concentrate|canned tomatoes?|tomato paste|dried (?:basil|parsley|thyme|rosemary|dill|oregano))\b/i],
+      ["Produce", /\b(onions?|garlic|potatoes?|carrots?|broccoli|cauliflower|asparagus|green beans?|mushrooms?|zucchini|bell peppers?|green peppers?|red peppers?|yellow peppers?|orange peppers?|poblano|jalapeño|jalapeno|corn|spinach|lettuce|greens|tomatoes?|avocado|lemons?|limes?|basil|parsley|cilantro|thyme|rosemary|dill|ginger|chillies|cucumbers?|celery|apples?|bananas?|berries|mango|peaches?|pineapple|cherries)\b/i],
       ["Meat & seafood", /\b(chicken|beef|turkey|pork|sausage|shrimp|salmon|fish|lamb|prosciutto)\b/i],
       ["Dairy & eggs", /\b(eggs?|(?<!coconut )milk|cream|(?<!peanut )(?<!almond )butter|cheese|cheddar|parmesan|mozzarella|provolone|yogurt|feta)\b/i],
       ["Bakery", /\b(bread|buns?|rolls?|tortillas?|flatbreads?|pitas?|taco shells?)\b/i]
@@ -184,12 +164,265 @@
     const canonicalIngredient = item => {
       const cleaned = item.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim()
         .replace(/^to\s+\d+(?:\s+\d+\/\d+)?\s+(?:(?:ounces?|oz|pounds?|lbs?|cups?|teaspoons?|tsp|tablespoons?|tbsp)\s+)?/i, "")
+        .replace(/^x?\s*\d+(?:\.\d+)?\s*(?:g|kg|ml|l|oz|ounces?|lb|pounds?)?\s*cans?\s+/i, "")
         .replace(/^(?:cans?|packages?|heads?)\s+/i, "")
         .replace(/^(fresh|large|small|medium|chopped|diced|sliced|minced)\s+/i, "");
       const alias = aliases.find(([pattern]) => pattern.test(cleaned));
       return alias ? alias[1] : cleaned;
     };
     const groceryCategory = item => categoryRules.find(([, pattern]) => pattern.test(item))?.[0] || "Cans & dry goods";
+    const equipmentIngredient = /\b(equipment|thermometer|twine|slicer|spice mill|mortar|pestle|baking dish|roasting pan|grill sheet|skillet|saucepan|frying pan|sheet pan|paper towels?|toothpicks?|rack)\b/i;
+    const optionalIngredient = /\b(optional|as desired|ingredient info|cooks? notes?)\b/i;
+    const freezerStaple = /\b(soup|stew|chili|curry|masala|tagine|lasagna|bolognese|ragu|ragout|casserole|meatloaf|meatballs|pot pie|shepherd|braised|beans|lentil|dal|rice|congee|gumbo|posole|pozole|pasta|noodles|orzo|gnocchi|dumpling|parmesan|chicken thighs|roast chicken|pulled|enchilada|empanada|fried rice|gratin)\b/i;
+    const poorAfterFreezing = /\b(salad|slaw|tostada|gazpacho|ceviche|sandwich|burger|wrap|taco|fried chicken|fish|shrimp|seafood|cucumber|lettuce|avocado|poached egg|roulade|crunchy)\b/i;
+    const freezerExceptions = new Set(["Foolproof Pan Pizza", "One Pot Beef Taco Pasta"]);
+    const freezerFriendly = recipe => freezerExceptions.has(recipe.title)
+      || (freezerStaple.test(recipe.title) && !poorAfterFreezing.test(recipe.title));
+    const isPantry = name => pantryStock.some(pattern => pattern.test(name.trim()));
+    const shoppingComplete = recipe => recipe.ingredientDetails?.length
+      && recipe.ingredientDetails.every(ingredient =>
+        Number.isFinite(ingredient.value)
+        || isPantry(ingredient.name)
+        || equipmentIngredient.test(ingredient.name)
+        || optionalIngredient.test(ingredient.name)
+      );
+    const ingredientKey = name => canonicalIngredient(name).toLowerCase();
+    const recipeIngredientKeys = recipe => new Set(recipe.ingredientDetails
+      .filter(ingredient =>
+        !isPantry(ingredient.name)
+        && !equipmentIngredient.test(ingredient.name)
+        && !(optionalIngredient.test(ingredient.name) && !Number.isFinite(ingredient.value))
+      )
+      .map(ingredient => ingredientKey(ingredient.name))
+      .filter(Boolean));
+    const overlapScore = (first, second) => {
+      const firstKeys = recipeIngredientKeys(first);
+      return [...recipeIngredientKeys(second)].reduce((score, key) => {
+        if (!firstKeys.has(key)) return score;
+        const category = groceryCategory(key);
+        return score + (category === "Produce" || category === "Dairy & eggs" ? 3 : 1);
+      }, 0);
+    };
+    const buildDefaultSchedule = () => {
+      const lunches = easy.slice(0, 10).map(([recipe]) => recipe);
+      const dinners = stretch.map(([recipe]) => recipe);
+      let best = [];
+      let bestScore = -1;
+      // ponytail: exhaustive matching is tiny for eight weeks; replace if the curated pool grows past ten.
+      const visit = (index, used, pairs, score) => {
+        if (index === dinners.length) {
+          if (score > bestScore) {
+            bestScore = score;
+            best = [...pairs];
+          }
+          return;
+        }
+        const b = dinners[index];
+        lunches.forEach(a => {
+          if (used.has(a.path)) return;
+          const overlap = overlapScore(a, b);
+          used.add(a.path);
+          pairs.push({a, b});
+          visit(index + 1, used, pairs, score + (overlap ? 100 + overlap : 0));
+          pairs.pop();
+          used.delete(a.path);
+        });
+      };
+      visit(0, new Set(), [], 0);
+      return best;
+    };
+    const selectionForWeek = number => {
+      const state = plans[number] || {};
+      const fallback = defaultSchedule[number - 1];
+      return {
+        a: easy.find(([recipe]) => recipe.path === state.a)?.[0] || fallback?.a,
+        b: stretch.find(([recipe]) => recipe.path === state.b)?.[0] || fallback?.b,
+        breakfast: breakfastPlans.find(plan => plan.id === state.breakfast)
+          || breakfastPlans[(number - 1) % breakfastPlans.length]
+      };
+    };
+    const nextPairForWeek = () => {
+      const otherWeeks = Array.from({length: 8}, (_, index) => index + 1)
+        .filter(number => number !== cycleWeek)
+        .map(selectionForWeek);
+      const usedDinners = new Set(otherWeeks.map(selection => selection.b?.path));
+      const lunchUses = otherWeeks.reduce((uses, selection) => {
+        if (selection.a) uses.set(selection.a.path, (uses.get(selection.a.path) || 0) + 1);
+        return uses;
+      }, new Map());
+      const availableDinners = stretch.map(([recipe]) => recipe)
+        .filter(recipe => !usedDinners.has(recipe.path));
+      const dinners = availableDinners.length
+        ? availableDinners
+        : stretch.map(([recipe]) => recipe);
+      const candidates = dinners.flatMap(b =>
+        easy.map(([a]) => ({a, b}))
+      ).filter(pair =>
+        pair.a.path !== mealA.value || pair.b.path !== mealB.value
+      ).sort((left, right) =>
+        (lunchUses.get(left.a.path) || 0) - (lunchUses.get(right.a.path) || 0)
+        || overlapScore(right.a, right.b) - overlapScore(left.a, left.b)
+        || costScore(left.a) - costScore(right.a)
+        || left.a.title.localeCompare(right.a.title)
+      );
+      return candidates[0];
+    };
+    const durableBulk = /\b(rolled oats|whey protein powder|cocoa powder|instant coffee|peanut butter|rice|pasta|spaghetti|noodles|orzo|quinoa|barley|couscous|polenta|breadcrumbs|panko|crackers|dried lentils|dried beans|dried herbs|cinnamon|curry powder|ground cumin|ground coriander|chilli powder|chilli flakes|paprika|yeast|soy sauce|vinegar|honey|mustard|hot sauce|curry paste)\b/i;
+    const unsuitableCarryover = /\b(fresh|cooked|prepared|green beans|sauce)\b/i;
+    const carryoverKey = name => {
+      const label = canonicalIngredient(name);
+      return durableBulk.test(label) && !unsuitableCarryover.test(label)
+        ? label.toLowerCase()
+        : null;
+    };
+    const priorBulkKeys = () => {
+      const keys = new Set();
+      for (let number = 1; number < cycleWeek; number += 1) {
+        const selection = selectionForWeek(number);
+        [selection.a, selection.b].filter(Boolean).forEach(recipe =>
+          recipe.ingredientDetails.forEach(ingredient => {
+            const key = carryoverKey(ingredient.name);
+            if (key) keys.add(key);
+          })
+        );
+        breakfastsFor(selection.breakfast).forEach(breakfast =>
+          breakfast.ingredients.forEach(ingredient => {
+            const key = carryoverKey(ingredient[0]);
+            if (key) keys.add(key);
+          })
+        );
+      }
+      return keys;
+    };
+    const unitAliases = {
+      tsp: ["volume", 5], teaspoon: ["volume", 5], teaspoons: ["volume", 5],
+      tbsp: ["volume", 15], tablespoon: ["volume", 15], tablespoons: ["volume", 15],
+      c: ["volume", 240], cup: ["volume", 240], cups: ["volume", 240],
+      ml: ["volume", 1], milliliter: ["volume", 1], milliliters: ["volume", 1],
+      l: ["volume", 1000], liter: ["volume", 1000], liters: ["volume", 1000],
+      g: ["mass", 1], gram: ["mass", 1], grams: ["mass", 1],
+      kg: ["mass", 1000], kilogram: ["mass", 1000], kilograms: ["mass", 1000],
+      oz: ["mass", 28.3495], ounce: ["mass", 28.3495], ounces: ["mass", 28.3495],
+      lb: ["mass", 453.592], lbs: ["mass", 453.592], pound: ["mass", 453.592], pounds: ["mass", 453.592]
+    };
+    const countUnits = /^(?:units?|pieces?|cloves?|heads?|bunches?|slices?|cans?|tins?|boxes?|jars?|bags?|bottles?|packages?|scoops?|servings?)$/i;
+    const singularCountUnit = unit => ({
+      units: "unit", pieces: "piece", cloves: "clove", heads: "head",
+      bunches: "bunch", slices: "slice", cans: "can", tins: "tin", boxes: "box",
+      jars: "jar", bags: "bag", bottles: "bottle", packages: "package",
+      scoops: "scoop", servings: "serving"
+    })[unit.toLowerCase()] || unit.toLowerCase().replace(/s$/, "");
+    const packageDescription = value => value
+      .replace(/\b(oz|lb|lbs|tsp|tbsp)\./gi, "$1")
+      .replace(/ounces?/gi, "oz")
+      .replace(/(\d)\s*-\s*(?=[a-z])/gi, "$1 ")
+      .replace(/(\d)\s*(g|kg|ml|l|oz)\b/gi, "$1 $2")
+      .replace(/(\d)\s*-\s*or\s*/gi, "$1–")
+      .replace(/\s*\/\s*/g, " / ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const measureFor = ingredient => {
+      if (!Number.isFinite(ingredient.value)) return null;
+      const unit = (ingredient.unit || "").toLowerCase();
+      const known = unitAliases[unit];
+      if (known) return {dimension: known[0], value: ingredient.value * known[1]};
+      if (countUnits.test(unit)) {
+        const countUnit = singularCountUnit(unit);
+        if (countUnit === "unit") {
+          return {dimension: "count", unit: "", value: ingredient.value};
+        }
+        return {dimension: `count:${countUnit}`, unit: countUnit, value: ingredient.value};
+      }
+      if (!unit) {
+        const packageMatch = ingredient.name.match(
+          /^\(([^)]*(?:ounces?|oz|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l)[^)]*)\)\s*(cans?|tins?|boxes?|jars?|bags?|bottles?|packages?)/i
+        ) || ingredient.name.match(
+          /^x?\s*(\d+(?:\.\d+)?\s*(?:ounces?|oz|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l))\s*(cans?|tins?|boxes?|jars?|bags?|bottles?|packages?)/i
+        );
+        if (packageMatch) {
+          const packageUnit = `${packageDescription(packageMatch[1])} ${singularCountUnit(packageMatch[2])}`;
+          return {dimension: `package:${packageUnit}`, unit: packageUnit, value: ingredient.value};
+        }
+        const leadingUnit = ingredient.name.match(
+          /^(?:to\s+\d+(?:\s+\d+\/\d+)?\s+)?(tbsp|tablespoons?|tsp|teaspoons?|cups?|oz|ounces?|lbs?|pounds?|g|grams?|kg|kilograms?|ml|milliliters?|l|liters?)\b\.?/i
+        )?.[1].toLowerCase();
+        const embedded = unitAliases[leadingUnit];
+        if (embedded) return {dimension: embedded[0], value: ingredient.value * embedded[1]};
+        const namedCount = ingredient.name.match(/^(cloves?|heads?|bunches?|slices?|cans?|tins?|boxes?|jars?|bags?|bottles?|packages?|scoops?|pieces?|servings?)\b/i);
+        if (namedCount) {
+          const countUnit = singularCountUnit(namedCount[1]);
+          return {dimension: `count:${countUnit}`, unit: countUnit, value: ingredient.value};
+        }
+        return {dimension: "count", unit: "", value: ingredient.value};
+      }
+      return {dimension: `unit:${unit}`, unit, value: ingredient.value};
+    };
+    const formatNumber = value => new Intl.NumberFormat("en-CA", {
+      maximumFractionDigits: 2
+    }).format(Math.round(value * 100) / 100);
+    const formatMeasure = measure => {
+      if (measure.dimension === "mass") {
+        return measure.value >= 1000
+          ? `${formatNumber(measure.value / 1000)} kg`
+          : `${formatNumber(measure.value)} g`;
+      }
+      if (measure.dimension === "volume") {
+        if (measure.value >= 1000) return `${formatNumber(measure.value / 1000)} L`;
+        if (measure.value >= 120) {
+          const cups = measure.value / 240;
+          return `${formatNumber(cups)} cup${cups === 1 ? "" : "s"}`;
+        }
+        if (measure.value >= 15) return `${formatNumber(measure.value / 15)} tbsp`;
+        return `${formatNumber(measure.value / 5)} tsp`;
+      }
+      if (measure.dimension === "count" || measure.dimension.startsWith("count:")) {
+        const exact = `${formatNumber(measure.value)}${measure.unit ? ` ${measure.unit}${measure.value === 1 ? "" : "s"}` : ""}`;
+        return Number.isInteger(measure.value) ? exact : `${exact} · buy ${Math.ceil(measure.value)}`;
+      }
+      if (measure.dimension.startsWith("package:")) {
+        const exact = `${formatNumber(measure.value)} × ${measure.unit}${measure.value === 1 ? "" : "s"}`;
+        return Number.isInteger(measure.value) ? exact : `${exact} · buy ${Math.ceil(measure.value)}`;
+      }
+      return `${formatNumber(measure.value)} ${measure.unit}`;
+    };
+    const breakfastRecipe = (breakfast, day, dayIndex, plan) => {
+      const query = new URLSearchParams({
+        week: String(cycleWeek), day: String(dayIndex), plan: plan.id
+      });
+      return `<a class="meal-slot breakfast-slot meal-link breakfast-link" href="${root}breakfast.html?${query}">
+        <strong>Breakfast · 1 adult portion</strong>
+        <span>${escapeHTML(breakfast.meal)}</span>
+        <small><span>Cook fresh</span><b>View recipe →</b></small>
+      </a>`;
+    };
+    const addGrocery = (items, rawIngredient, source) => {
+      const ingredient = Array.isArray(rawIngredient)
+        ? {name: rawIngredient[0], value: rawIngredient[1], unit: rawIngredient[2] || null}
+        : rawIngredient;
+      if (isPantry(ingredient.name) || equipmentIngredient.test(ingredient.name)
+          || (optionalIngredient.test(ingredient.name) && !Number.isFinite(ingredient.value))) return;
+      const measure = measureFor(ingredient);
+      if (!measure) return;
+      const canonical = canonicalIngredient(ingredient.name);
+      const label = canonical.charAt(0).toUpperCase() + canonical.slice(1);
+      if (!label) return;
+      const key = label.toLowerCase();
+      const item = items.get(key) || {
+        label, category: groceryCategory(label), measures: new Map(),
+        sources: {lunch: 0, dinner: 0, breakfast: 0}
+      };
+      const current = item.measures.get(measure.dimension) || {...measure, value: 0};
+      current.value += measure.value;
+      item.measures.set(measure.dimension, current);
+      item.sources[source] = source === "breakfast" ? item.sources[source] + 1 : 5;
+      items.set(key, item);
+    };
+    const groceryAmount = item => [...item.measures.values()].map(formatMeasure).join(" + ");
+    const grocerySources = item => [
+      item.sources.lunch && "5 lunches",
+      item.sources.dinner && "5 dinners",
+      item.sources.breakfast && `${item.sources.breakfast} breakfast${item.sources.breakfast === 1 ? "" : "s"}`
+    ].filter(Boolean).join(" + ");
     const escapeHTML = value => value.replace(/[&<>"']/g, character => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     })[character]);
@@ -207,6 +440,14 @@
     console.assert(canonicalIngredient("hard corn taco shells") === "Taco shells", "taco shells should merge");
     console.assert(canonicalIngredient("can light coconut milk") === "Coconut milk", "coconut milk variants should merge");
     console.assert(canonicalIngredient("to 10 ounces green beans or slender asparagus") === "Green beans", "range fragments should be removed");
+    console.assert(canonicalIngredient("garlic powder") === "Garlic powder", "garlic powder must not merge with fresh garlic");
+    console.assert(canonicalIngredient("onion powder") === "Onion powder", "onion powder must not merge with fresh onions");
+    console.assert(canonicalIngredient("(28 ounce) can crushed tomatoes") === "Canned tomatoes", "canned tomatoes need a distinct aisle label");
+    console.assert(formatMeasure(measureFor({name: "oz. green beans", value: 12.5, unit: null})) === "354.37 g", "leading source units should remain measurable");
+    console.assert(formatMeasure(measureFor({name: "(15-ounce) can coconut milk", value: 1.25, unit: null})) === "1.25 \u00d7 15 oz cans \u00b7 buy 2", "package quantities should show exact use and whole-item purchase");
+    console.assert(packageDescription("6.5 ounce") === "6.5 oz", "package decimals must be preserved");
+    console.assert(formatMeasure(measureFor({name: "medium onion", value: 2.5, unit: null})) === "2.5 \u00b7 buy 3", "fractional counts should preserve exact use and purchase quantity");
+    console.assert(measureFor({name: "onion", value: 1.25, unit: "unit"}).dimension === "count", "generic units must merge with unitless counts");
     console.assert(breakfastPlans.length === 8, "each week should have a breakfast rotation");
     console.assert(breakfastPlans.every(plan =>
       breakfastsFor(plan).filter(day => day.meal.includes("Whey smoothie")).length === 2
@@ -220,9 +461,22 @@
     console.assert(groceryCategory("flour tortillas") === "Bakery", "breakfast tortillas should stay in bakery");
     console.assert(groceryCategory("coconut milk") === "Cans & dry goods", "coconut milk is not dairy");
     console.assert(groceryCategory("cayenne pepper") === "Cans & dry goods", "ground spices are dry goods");
+    console.assert(groceryCategory("beef broth") === "Cans & dry goods", "broth is a dry-goods aisle item");
+    console.assert(groceryCategory("canned tomatoes") === "Cans & dry goods", "canned tomatoes are not fresh produce");
+    console.assert(groceryCategory("fresh rosemary") === "Produce", "fresh herbs belong in produce");
 
-    function mealLink(recipe, label) {
-      return `<a href="${root}${recipe.path}"><strong>${label}</strong><span>${recipe.title}</span></a>`;
+    function mealLink(recipe, label, day, dayIndex) {
+      const query = new URLSearchParams({
+        servings: "1", week: String(cycleWeek), day, meal: label.toLowerCase()
+      });
+      const storage = dayIndex >= 3
+        ? "Frozen Sunday · thaw overnight"
+        : "Refrigerated Sunday";
+      return `<a class="meal-link" href="${root}${recipe.path}?${query}">
+        <strong>${label} · 1 adult portion</strong>
+        <span>${escapeHTML(recipe.title)}</span>
+        <small><span>${storage}</span><b>View recipe →</b></small>
+      </a>`;
     }
 
     function render() {
@@ -232,9 +486,12 @@
       const breakfastDays = breakfastsFor(breakfastPlan);
       if (!a || !b) return;
       skill.textContent = technique(b).replace(/\b\w/g, letter => letter.toUpperCase());
-      batchNote.textContent = "Sunday: cook 5 portions of each. 10 weekday meals. Breakfast is made fresh daily.";
+      batchNote.innerHTML = `Sunday: cook
+        <a href="${root}${a.path}?servings=5&week=${cycleWeek}">${escapeHTML(a.title)} · 5 lunches</a>
+        and <a href="${root}${b.path}?servings=5&week=${cycleWeek}">${escapeHTML(b.title)} · 5 dinners</a>.
+        Refrigerate Mon–Tue; freeze Wed–Fri within 2 hours.`;
       week.innerHTML = days.map((day, index) => {
-        const breakfast = `<div class="meal-slot breakfast-slot"><strong>Breakfast</strong><span>${escapeHTML(breakfastDays[index].meal)}</span></div>`;
+        const breakfast = breakfastRecipe(breakfastDays[index], day, index, breakfastPlan);
         let lunch, dinner;
         if (day === "Sunday") {
           lunch = `<div class="takeout">Lunch · Takeout</div>`;
@@ -243,38 +500,60 @@
           lunch = `<div class="open-slot">Lunch · Open</div>`;
           dinner = `<div class="open-slot">Dinner · Open</div>`;
         } else {
-          lunch = mealLink(a, "Lunch");
-          dinner = mealLink(b, "Dinner");
+          lunch = mealLink(a, "Lunch", day, index);
+          dinner = mealLink(b, "Dinner", day, index);
         }
-        return `<article class="day-card${day === "Sunday" ? " is-prep-day" : ""}"><h2>${day}</h2>${breakfast}<div class="meal-slot">${lunch}</div><div class="meal-slot">${dinner}</div></article>`;
+        const classes = [
+          "day-card",
+          day === "Sunday" && "is-prep-day",
+          index >= 3 && index <= 5 && "is-frozen-day"
+        ].filter(Boolean).join(" ");
+        return `<article class="${classes}"><h2>${day}</h2>${breakfast}<div class="meal-slot">${lunch}</div><div class="meal-slot">${dinner}</div></article>`;
       }).join("");
 
-      const unique = new Map();
-      [...a.ingredients, ...b.ingredients, ...breakfastDays.flatMap(day => day.ingredients)]
-        .flatMap(item => item.replace(/^Accompaniments?:\s*/i, "").split(/\s*;\s*/))
-        .map(item => item.trim())
-        .filter(Boolean)
-        .filter(item => !pantryStock.some(pattern => pattern.test(item.trim())))
-        .forEach(item => {
-          const label = canonicalIngredient(item);
-          unique.set(label.toLowerCase(), label);
-        });
-      const grouped = [...unique.values()].reduce((result, item) => {
-        (result[groceryCategory(item)] ||= []).push(item);
+      const quantified = new Map();
+      a.ingredientDetails.forEach(ingredient => addGrocery(quantified, ingredient, "lunch"));
+      b.ingredientDetails.forEach(ingredient => addGrocery(quantified, ingredient, "dinner"));
+      breakfastDays.forEach(day =>
+        day.ingredients.forEach(ingredient => addGrocery(quantified, ingredient, "breakfast"))
+      );
+      const grouped = [...quantified.values()].reduce((result, item) => {
+        (result[item.category] ||= []).push(item);
         return result;
       }, {});
       latestGroceries = ["Produce","Meat & seafood","Dairy & eggs","Bakery","Frozen","Cans & dry goods"]
         .filter(category => grouped[category]?.length)
-        .map(category => [category, grouped[category].sort((x, y) => x.localeCompare(y))]);
+        .map(category => [category, grouped[category].sort((x, y) => x.label.localeCompare(y.label))]);
+      const previousBulk = priorBulkKeys();
+      latestGroceries.forEach(([, items]) => items.forEach(item => {
+        item.carryover = previousBulk.has(item.label.toLowerCase()) && Boolean(carryoverKey(item.label));
+        const key = encodeURIComponent(item.label.toLowerCase());
+        item.carried = item.carryover && !carryoverDismissed.has(key);
+      }));
       groceries.innerHTML = latestGroceries
         .map(([category, items]) => `<section class="grocery-group${items.length > 10 ? " is-long" : ""}"><h3>${category}</h3><ul>${
           items.map(item => {
-            const key = encodeURIComponent(item.toLowerCase());
-            return `<li><label><input type="checkbox" data-key="${key}" ${checked.has(key) ? "checked" : ""}> <span>${escapeHTML(item)}</span></label></li>`;
+            const key = encodeURIComponent(item.label.toLowerCase());
+            return `<li><label><input type="checkbox" data-key="${key}" data-carryover="${item.carryover}" data-carried="${item.carried}" ${checked.has(key) || item.carried ? "checked" : ""}>
+              <span class="grocery-item"><strong>${escapeHTML(item.label)}</strong><span>${groceryAmount(item)}</span><small>${grocerySources(item)}<span class="carryover-note"${item.carried ? "" : " hidden"}> · carryover assumed</span></small></span>
+            </label></li>`;
           }).join("")
         }</ul></section>`).join("");
       groceries.querySelectorAll("input").forEach(input => input.addEventListener("change", () => {
-        input.checked ? checked.add(input.dataset.key) : checked.delete(input.dataset.key);
+        if (input.checked) {
+          checked.add(input.dataset.key);
+          carryoverDismissed.delete(input.dataset.key);
+        } else {
+          checked.delete(input.dataset.key);
+          if (input.dataset.carryover === "true") {
+            carryoverDismissed.add(input.dataset.key);
+            input.dataset.carried = "false";
+            input.closest("label").querySelector(".carryover-note").hidden = true;
+            latestGroceries.flatMap(([, items]) => items)
+              .filter(item => encodeURIComponent(item.label.toLowerCase()) === input.dataset.key)
+              .forEach(item => { item.carried = false; });
+          }
+        }
         updateGroceryProgress();
         save();
       }));
@@ -285,8 +564,9 @@
     function updateGroceryProgress() {
       const boxes = [...groceries.querySelectorAll("input")];
       const done = boxes.filter(box => box.checked).length;
+      const carryovers = boxes.filter(box => box.checked && box.dataset.carried === "true").length;
       groceryProgress.textContent = done
-        ? `${done} of ${boxes.length} picked up`
+        ? `${done} of ${boxes.length} covered${carryovers ? ` · ${carryovers} carryover` : ""}`
         : `${boxes.length} items, organized by aisle`;
     }
 
@@ -324,12 +604,14 @@
       history.replaceState(null, "", `?week=${cycleWeek}`);
       const state = plans[cycleWeek] || {};
       checked = new Set(state.checked || []);
+      carryoverDismissed = new Set(state.carryoverDismissed || []);
+      const fallback = defaultSchedule[cycleWeek - 1];
       breakfastSelect.value = breakfastPlans.some(plan => plan.id === state.breakfast)
         ? state.breakfast : breakfastPlans[(cycleWeek - 1) % breakfastPlans.length].id;
       mealA.value = easy.some(([recipe]) => recipe.path === state.a)
-        ? state.a : easy[(cycleWeek - 1) % easy.length]?.[0].path;
+        ? state.a : fallback?.a.path;
       mealB.value = stretch.some(([recipe]) => recipe.path === state.b)
-        ? state.b : (stretch[(cycleWeek - 1) % stretch.length]?.[0].path ?? easy[1]?.[0].path);
+        ? state.b : fallback?.b.path;
       renderWeekNav();
       render();
     }
@@ -337,25 +619,35 @@
     fetch(root + "static/search-index.json").then(response => response.json()).then(data => {
       recipes = data;
       const byCost = ([a], [b]) => costScore(a) - costScore(b);
-      easy = data.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Approachable").sort(byCost);
-      stretch = data.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Stretch").sort(byCost);
+      const storageReady = data.filter(recipe =>
+        recipe.plannerReady && freezerFriendly(recipe) && shoppingComplete(recipe)
+      );
+      easy = storageReady.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Approachable").sort(byCost);
+      stretch = storageReady.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Stretch").sort(byCost);
+      console.assert(easy.length >= 8 && stretch.length >= 8, "eight weeks need unique planner-ready choices");
       easy.forEach(([recipe]) => {
         mealA.append(option(recipe));
       });
       (stretch.length ? stretch : easy).forEach(([recipe]) => {
         mealB.append(option(recipe));
       });
+      defaultSchedule = buildDefaultSchedule();
+      console.assert(defaultSchedule.length === 8
+        && defaultSchedule.every(({a, b}) => overlapScore(a, b) > 0),
+      "each default week needs a unique overlapping pair");
       [breakfastSelect, mealA, mealB].forEach(control => control.addEventListener("change", () => {
         checked.clear();
+        carryoverDismissed.clear();
         render();
       }));
       reroll.addEventListener("click", () => {
-        const pick = choices => choices[Math.floor(Math.random() * choices.length)]?.[0].path;
-        const nextA = pick(easy);
-        const nextB = pick(stretch.length ? stretch : easy);
-        if (nextA) mealA.value = nextA;
-        if (nextB) mealB.value = nextB;
+        const pair = nextPairForWeek();
+        if (pair) {
+          mealA.value = pair.a.path;
+          mealB.value = pair.b.path;
+        }
         checked.clear();
+        carryoverDismissed.clear();
         render();
       });
       loadWeek(cycleWeek);
@@ -363,7 +655,9 @@
 
     document.getElementById("copy-groceries").addEventListener("click", async event => {
       const text = latestGroceries
-        .map(([category, items]) => `${category}\n${items.map(item => `- ${item}`).join("\n")}`)
+        .map(([category, items]) => `${category}\n${
+          items.map(item => `- ${item.label}: ${groceryAmount(item)} (${grocerySources(item)}${item.carried ? "; carryover assumed" : ""})`).join("\n")
+        }`)
         .join("\n\n");
       try {
         await navigator.clipboard.writeText(text);
@@ -375,7 +669,10 @@
     });
     document.getElementById("clear-groceries").addEventListener("click", () => {
       checked.clear();
-      groceries.querySelectorAll("input").forEach(input => { input.checked = false; });
+      groceries.querySelectorAll("input").forEach(input => {
+        input.checked = false;
+        if (input.dataset.carryover === "true") carryoverDismissed.add(input.dataset.key);
+      });
       updateGroceryProgress();
       save();
     });

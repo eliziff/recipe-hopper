@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Breakfast · Recipe Hopper</title>
+  <link rel="stylesheet" href="/recipe-hopper/static/css/output.css">
+  <link rel="stylesheet" href="/recipe-hopper/static/css/custom-styles.css">
+</head>
+<body class="bg-gray-50">
+  <main class="breakfast-page">
+    <a class="portion-back breakfast-back" id="back" href="/recipe-hopper/planner.html">← Back to weekly plan</a>
+    <header>
+      <p class="eyebrow" id="day">Breakfast · 1 adult portion</p>
+      <h1 id="title"></h1>
+      <p>Cook fresh in the morning. These quantities feed one adult.</p>
+    </header>
+    <div class="breakfast-recipe-grid">
+      <section>
+        <h2>Ingredients</h2>
+        <ul id="ingredients"></ul>
+      </section>
+      <section>
+        <h2>Method</h2>
+        <p id="method"></p>
+      </section>
+    </div>
+  </main>
+  <script src="/recipe-hopper/static/js/breakfast-data.js"></script>
+  <script>
+    (() => {
+      const {plans, forPlan, method} = window.RECIPE_HOPPER_BREAKFASTS;
+      const params = new URLSearchParams(location.search);
+      const week = Math.min(8, Math.max(1, Number(params.get("week")) || 1));
+      const dayIndex = Math.min(6, Math.max(0, Number(params.get("day")) || 0));
+      const plan = plans.find(item => item.id === params.get("plan")) || plans[(week - 1) % plans.length];
+      const breakfast = forPlan(plan)[dayIndex];
+      const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+      const number = value => new Intl.NumberFormat("en-CA", {maximumFractionDigits: 2}).format(value);
+      const escapeHTML = value => value.replace(/[&<>"']/g, character => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[character]);
+      const ingredientLabel = value => value.charAt(0).toUpperCase() + value.slice(1);
+      document.title = `${breakfast.meal} · Recipe Hopper`;
+      document.getElementById("back").href = `/recipe-hopper/planner.html?week=${week}`;
+      document.getElementById("back").textContent = `← Back to Week ${week}`;
+      document.getElementById("day").textContent = `${days[dayIndex]} breakfast · 1 adult portion`;
+      document.getElementById("title").textContent = breakfast.meal;
+      document.getElementById("ingredients").innerHTML = breakfast.ingredients.map(ingredient =>
+        `<li><span>${escapeHTML(ingredientLabel(ingredient[0]))}</span><strong>${number(ingredient[1])}${ingredient[2] ? ` ${escapeHTML(ingredient[2])}` : ""}</strong></li>`
+      ).join("");
+      document.getElementById("method").textContent = method(breakfast);
+    })();
+  </script>
+</body>
+</html>
