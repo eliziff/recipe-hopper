@@ -33,13 +33,14 @@ with (SITE / "static/css/custom-styles.css").open("a", encoding="utf-8") as outp
     output.write("\n" + css)
 shutil.copy2(ROOT / "planner.html", SITE / "planner.html")
 shutil.copy2(ROOT / "breakfast.html", SITE / "breakfast.html")
+shutil.copy2(ROOT / "curriculum.js", SITE / "static/js/curriculum.js")
 shutil.copy2(ROOT / "breakfast-data.js", SITE / "static/js/breakfast-data.js")
 
 header = """
 <header class="site-header print:hidden">
   <a class="site-brand" href="/recipe-hopper/">
     <span class="site-mark" aria-hidden="true">RH</span>
-    <span><strong>Recipe Hopper</strong><small>Eight weeks of Sunday cooking</small></span>
+    <span><strong>Recipe Hopper</strong><small>32 weeks of Sunday cooking</small></span>
   </a>
   <div class="site-search" id="search-container">
     <label class="sr-only" for="search-input">Search recipes</label>
@@ -207,7 +208,7 @@ portion_script = """
     })
   );
   if (params.has("week")) {
-    const week = Math.min(8, Math.max(1, Number(params.get("week")) || 1));
+    const week = Math.min(32, Math.max(1, Number(params.get("week")) || 1));
     const back = document.getElementById("portion-back");
     back.hidden = false;
     back.href = `/recipe-hopper/planner.html?week=${week}`;
@@ -369,6 +370,7 @@ for page in SITE.rglob("*.html"):
     )
     text = text.replace(">approachable</span>", ">Approachable</span>")
     text = text.replace(">stretch</span>", ">Stretch</span>")
+    text = text.replace(">spaced-review</span>", ">Spaced practice</span>")
     text = re.sub(
         r">#skill-([a-z-]+)</span>",
         lambda match: f">Skill: {match.group(1).replace('-', ' ').title()}</span>",
@@ -376,6 +378,7 @@ for page in SITE.rglob("*.html"):
     )
     text = text.replace(">#approachable</span>", ">Approachable</span>")
     text = text.replace(">#stretch</span>", ">Stretch recipe</span>")
+    text = text.replace(">#spaced-review</span>", ">Spaced practice</span>")
     text = re.sub(
         r'(<span class="metadata-pill metadata-servings">).*?(5 servings</span>)',
         r"\1Base batch · \2",

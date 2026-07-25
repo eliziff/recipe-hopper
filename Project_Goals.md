@@ -7,7 +7,7 @@ large recipe collection into one practical weekly cooking routine.
 
 ## Weekly routine
 
-- Show one explicitly selectable week at a time in an eight-week cycle.
+- Show one explicitly selectable week at a time in a 32-week curriculum.
 - Open on week 1 by default; do not derive the selected week from the calendar.
 - Sunday is the only grocery and meal-prep day.
 - Sunday lunch and dinner are takeout.
@@ -18,12 +18,16 @@ large recipe collection into one practical weekly cooking routine.
   preserving a five-portion Sunday batch view.
 - Prefer meals that hold well after cooking; refrigerate Monday and Tuesday
   portions and freeze Wednesday through Friday portions on Sunday.
-- Alternate exactly two quick, easy breakfasts across the seven days and make
+- Alternate exactly two breakfasts across the seven days and make
   each one fresh that morning.
 - Pair one Easy smoothie-and-toast breakfast with one Hard cooked breakfast;
   alternate them across the week.
-- Pair one easy recipe with one skill-building recipe and introduce one
-  deliberate cooking technique each week.
+- Include chickpea-and-olive shakshuka and revisit its egg-poaching technique
+  on expanding cross-week intervals.
+- Pair one easy recipe with the curriculum dinner. Revisit only explicitly
+  tagged complex recipes and techniques; use one-off variety elsewhere.
+- Generate the 32-week schedule, review stages, lunch pairing, and breakfast
+  defaults programmatically.
 
 ## Recipe library
 
@@ -50,7 +54,7 @@ large recipe collection into one practical weekly cooking routine.
 - Show a measured quantity for every grocery item, summed from five lunches,
   five dinners, and seven one-person breakfasts.
 - Choose lunch and dinner pairs programmatically to favour useful ingredient
-  overlap without repeating the week's cooking technique.
+  overlap while preserving scheduled technique reviews.
 - Carry durable bulk ingredients into later weeks and pre-check them when the
   plan assumes stock remains.
 - Group ingredients by grocery aisle.

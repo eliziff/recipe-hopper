@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Weekly Meal Plan</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="static/css/output.css">
   <link rel="stylesheet" href="static/css/custom-styles.css">
 </head>
@@ -11,7 +12,7 @@
   <main class="planner-shell mx-auto px-4">
     <header class="planner-header">
       <a href="./">← Recipe library</a>
-      <p class="eyebrow" id="cycle">Choose a week · 1 of 8</p>
+      <p class="eyebrow" id="cycle">Choose a week · 1 of 32</p>
       <h1>Weekly plan</h1>
       <nav class="cycle-progress" id="cycle-progress" aria-label="Choose a week"></nav>
     </header>
@@ -19,15 +20,15 @@
     <section class="planner-controls grid gap-4 bg-white border border-gray-200 rounded-xl" aria-label="Plan settings">
       <label><span>Breakfast rotation</span><select id="breakfast-plan"></select></label>
       <label><span>Easy · freezer-friendly</span><select id="meal-a"></select></label>
-      <label><span>Skill · freezer-friendly</span><select id="meal-b"></select></label>
-      <button class="reroll-button" id="reroll" type="button">New pairing</button>
+      <label><span>Dinner · freezer-friendly</span><select id="meal-b"></select></label>
+      <button class="reroll-button" id="reroll" type="button">Swap lunch</button>
     </section>
 
     <section class="prep-summary bg-white border border-gray-200 rounded-xl" aria-live="polite">
-      <div><span>Technique</span><strong id="skill"></strong></div>
+      <div><span>Technique</span><strong id="skill"></strong><small class="practice-status" id="practice-status"></small></div>
       <p class="batch-note" id="batch-note"></p>
     </section>
-    <details class="technique-lesson bg-white border border-gray-200 rounded-xl" open>
+    <details class="technique-lesson bg-white border border-gray-200 rounded-xl" id="technique-lesson" open>
       <summary>
         <span>Technique guide</span>
         <strong id="lesson-title"></strong>
@@ -68,23 +69,37 @@
       <div class="grocery-groups" id="groceries"></div>
     </section>
   </main>
+  <script src="static/js/curriculum.js"></script>
   <script src="static/js/breakfast-data.js"></script>
   <script>
     const root = "./";
     const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-    const clampWeek = value => Math.min(8, Math.max(1, Number(value) || 1));
-    const plans = JSON.parse(localStorage.getItem("recipe-hopper-plans") || "{}");
+    const {
+      WEEK_COUNT,
+      REVIEW_OFFSETS,
+      breakfastReviewWeeks,
+      breakfastPracticeForWeek,
+      buildPracticeSchedule
+    } = window.RECIPE_HOPPER_CURRICULUM;
+    const clampWeek = value => Math.min(WEEK_COUNT, Math.max(1, Number(value) || 1));
+    const storageKey = "recipe-hopper-plans-32-v1";
+    const plans = JSON.parse(localStorage.getItem(storageKey) || "{}");
     let cycleWeek = clampWeek(new URLSearchParams(location.search).get("week"));
     let recipes = [];
     let easy = [];
     let stretch = [];
+    let dinners = [];
     let defaultSchedule = [];
     let checked = new Set();
     let carryoverDismissed = new Set();
     let latestGroceries = [];
     const {
       plans: breakfastPlans,
+      reviewPlanId: breakfastReviewPlanId,
       forPlan: breakfastsFor,
+      resolvePlan: resolveBreakfastPlan,
+      defaultForWeek: breakfastForWeek,
+      lesson: breakfastLesson,
       method: breakfastMethod
     } = window.RECIPE_HOPPER_BREAKFASTS;
     const techniqueLessons = {
@@ -215,6 +230,7 @@
         ]
       }
     };
+    techniqueLessons[breakfastLesson.name] = breakfastLesson;
 
     const save = () => {
       plans[cycleWeek] = {
@@ -222,13 +238,13 @@
         a: mealA.value, b: mealB.value, checked: [...checked],
         carryoverDismissed: [...carryoverDismissed]
       };
-      localStorage.setItem("recipe-hopper-plans", JSON.stringify(plans));
+      localStorage.setItem(storageKey, JSON.stringify(plans));
     };
 
-    function option(recipe) {
+    function option(recipe, dinner = false) {
       const node = document.createElement("option");
       node.value = recipe.path;
-      node.textContent = difficulty(recipe) === "Stretch"
+      node.textContent = dinner && difficulty(recipe) === "Stretch"
         ? `${recipe.title} — ${technique(recipe)}`
         : recipe.title;
       return node;
@@ -280,7 +296,7 @@
       [/\b(?:chilli|chile|chili) paste\b/i, "Chilli paste"],
       [/\b(?:chilli|chile|chili) sauce\b/i, "Chilli sauce"],
       [/\b(cilantro|coriander)\b/i, "Cilantro"],
-      [/\bjalapeÃ±os?\b|\bjalapenos?\b/i, "Jalapeños"],
+      [/\bjalapeños?\b|\bjalapenos?\b/i, "Jalapeños"],
       [/\bpoblanos?\b/i, "Poblanos"],
       [/\b(chilli|chile|chili)\b/i, "Chillies"],
       [/\bspinach\b/i, "Spinach"],
@@ -354,68 +370,59 @@
       }, 0);
     };
     const buildDefaultSchedule = () => {
-      const lunches = easy.slice(0, 10).map(([recipe]) => recipe);
-      const dinners = stretch.map(([recipe]) => recipe);
-      let best = [];
-      let bestScore = -1;
-      // ponytail: exhaustive matching is tiny for eight weeks; replace if the curated pool grows past ten.
-      const visit = (index, used, pairs, score) => {
-        if (index === dinners.length) {
-          if (score > bestScore) {
-            bestScore = score;
-            best = [...pairs];
-          }
-          return;
-        }
-        const b = dinners[index];
-        lunches.forEach(a => {
-          if (used.has(a.path)) return;
-          const overlap = overlapScore(a, b);
-          used.add(a.path);
-          pairs.push({a, b});
-          visit(index + 1, used, pairs, score + (overlap ? 100 + overlap : 0));
-          pairs.pop();
-          used.delete(a.path);
-        });
-      };
-      visit(0, new Set(), [], 0);
-      return best;
+      const reviewable = stretch
+        .map(([recipe]) => recipe)
+        .filter(recipe => recipe.tags?.includes("spaced-review"));
+      const fillers = [
+        ...stretch.map(([recipe]) => recipe).filter(recipe => !recipe.tags?.includes("spaced-review")),
+        ...easy.map(([recipe]) => recipe)
+      ];
+      const curriculum = buildPracticeSchedule(reviewable, fillers);
+      const lunchUses = new Map();
+      let priorLunch = "";
+      return curriculum.map(({recipe: b, practice}) => {
+        const candidates = easy.map(([recipe]) => recipe)
+          .filter(recipe => recipe.path !== b.path)
+          .sort((left, right) =>
+            Number(left.path === priorLunch) - Number(right.path === priorLunch)
+            || (lunchUses.get(left.path) || 0) - (lunchUses.get(right.path) || 0)
+            || overlapScore(right, b) - overlapScore(left, b)
+            || costScore(left) - costScore(right)
+            || left.title.localeCompare(right.title)
+          );
+        const a = candidates[0];
+        lunchUses.set(a.path, (lunchUses.get(a.path) || 0) + 1);
+        priorLunch = a.path;
+        return {a, b, practice};
+      });
     };
     const selectionForWeek = number => {
       const state = plans[number] || {};
       const fallback = defaultSchedule[number - 1];
       return {
         a: easy.find(([recipe]) => recipe.path === state.a)?.[0] || fallback?.a,
-        b: stretch.find(([recipe]) => recipe.path === state.b)?.[0] || fallback?.b,
-        breakfast: breakfastPlans.find(plan => plan.id === state.breakfast)
-          || breakfastPlans[(number - 1) % breakfastPlans.length]
+        b: dinners.find(recipe => recipe.path === state.b) || fallback?.b,
+        breakfast: resolveBreakfastPlan(state.breakfast, number) || breakfastForWeek(number)
       };
     };
-    const nextPairForWeek = () => {
-      const otherWeeks = Array.from({length: 8}, (_, index) => index + 1)
+    const nextLunchForWeek = () => {
+      const dinner = dinners.find(recipe => recipe.path === mealB.value);
+      if (!dinner) return null;
+      const otherWeeks = Array.from({length: WEEK_COUNT}, (_, index) => index + 1)
         .filter(number => number !== cycleWeek)
         .map(selectionForWeek);
-      const usedDinners = new Set(otherWeeks.map(selection => selection.b?.path));
       const lunchUses = otherWeeks.reduce((uses, selection) => {
         if (selection.a) uses.set(selection.a.path, (uses.get(selection.a.path) || 0) + 1);
         return uses;
       }, new Map());
-      const availableDinners = stretch.map(([recipe]) => recipe)
-        .filter(recipe => !usedDinners.has(recipe.path));
-      const dinners = availableDinners.length
-        ? availableDinners
-        : stretch.map(([recipe]) => recipe);
-      const candidates = dinners.flatMap(b =>
-        easy.map(([a]) => ({a, b}))
-      ).filter(pair =>
-        pair.a.path !== mealA.value || pair.b.path !== mealB.value
-      ).sort((left, right) =>
-        (lunchUses.get(left.a.path) || 0) - (lunchUses.get(right.a.path) || 0)
-        || overlapScore(right.a, right.b) - overlapScore(left.a, left.b)
-        || costScore(left.a) - costScore(right.a)
-        || left.a.title.localeCompare(right.a.title)
-      );
-      return candidates[0];
+      return easy.map(([recipe]) => recipe)
+        .filter(recipe => recipe.path !== mealA.value && recipe.path !== dinner.path)
+        .sort((left, right) =>
+          (lunchUses.get(left.path) || 0) - (lunchUses.get(right.path) || 0)
+          || overlapScore(right, dinner) - overlapScore(left, dinner)
+          || costScore(left) - costScore(right)
+          || left.title.localeCompare(right.title)
+        )[0];
     };
     const durableBulk = /\b(rolled oats|whey protein powder|cocoa powder|instant coffee|peanut butter|rice|pasta|spaghetti|noodles|orzo|fettuccine|linguine|penne|rigatoni|rotini|macaroni|bucatini|capellini|fusilli|gemelli|quinoa|barley|couscous|polenta|breadcrumbs|panko|crackers|cornstarch|bouillon|stock concentrate|dried lentils|dried beans|dried herbs|dried (?:basil|oregano|thyme|rosemary|dill|parsley)|cinnamon|curry powder|ground cumin|ground coriander|chilli powder|chilli flakes|paprika|cayenne(?: pepper)?|garlic powder|onion powder|celery seed|fennel seeds?|Italian seasoning|taco seasoning|yeast|soy sauce|vinegar|honey|mustard|hot sauce|curry paste|gochujang paste)\b/i;
     const unsuitableCarryover = /\b(fresh|cooked|prepared|green beans|(?:pasta|pizza|tomato) sauce|bulk sweet Italian sausage)\b/i;
@@ -477,6 +484,7 @@
       .replace(/\s*\/\s*/g, " / ")
       .replace(/\s+/g, " ")
       .trim();
+    const packageVolume = /\b(coconut milk|milk|broth|stock|cream|juice|vinegar|sauce|yogurt|tomato(?:es)?)\b/i;
     const measureFor = ingredient => {
       if (!Number.isFinite(ingredient.value)) return null;
       const unit = (ingredient.unit || "").toLowerCase();
@@ -493,10 +501,23 @@
         const packageMatch = ingredient.name.match(
           /^\(([^)]*(?:ounces?|oz|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l)[^)]*)\)\s*(cans?|tins?|boxes?|jars?|bags?|bottles?|packages?)/i
         ) || ingredient.name.match(
-          /^x?\s*(\d+(?:\.\d+)?\s*(?:ounces?|oz|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l))\s*(cans?|tins?|boxes?|jars?|bags?|bottles?|packages?)/i
+          /^x?\s*(\d+(?:\.\d+)?\s*(?:ounces?|oz|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l))\.?\s*(cans?|tins?|boxes?|jars?|bags?|bottles?|packages?)/i
         );
         if (packageMatch) {
-          const packageUnit = `${packageDescription(packageMatch[1])} ${singularCountUnit(packageMatch[2])}`;
+          const size = packageDescription(packageMatch[1]);
+          const physical = size.match(/^(\d+(?:\.\d+)?)\s*(oz|lb|g|kg|ml|l)\b/i);
+          if (physical) {
+            const alias = unitAliases[physical[2].toLowerCase()];
+            const dimension = packageVolume.test(ingredient.name) && alias[0] === "mass"
+              ? "volume"
+              : alias[0];
+            return {
+              dimension,
+              value: ingredient.value * Number(physical[1]) * alias[1],
+              approximate: dimension !== alias[0]
+            };
+          }
+          const packageUnit = `${size} ${singularCountUnit(packageMatch[2])}`;
           return {dimension: `package:${packageUnit}`, unit: packageUnit, value: ingredient.value};
         }
         const leadingUnit = ingredient.name.match(
@@ -550,10 +571,19 @@
         week: String(cycleWeek), day: String(dayIndex), plan: plan.id
       });
       const level = breakfast.difficulty || "Easy";
+      const practice = breakfast.skill ? breakfastPracticeForWeek(cycleWeek) : null;
+      const skillLabel = breakfast.skill?.replace(/\b\w/g, letter => letter.toUpperCase());
+      const cue = practice
+        ? practice.stage
+          ? `${skillLabel} · Review ${practice.stage} of ${breakfastReviewWeeks.length - 1} · last Week ${practice.previousWeek}`
+          : `${skillLabel} · New · next Week ${practice.nextWeek}`
+        : breakfast.skill
+          ? `Practice · ${skillLabel}`
+          : "Cook fresh";
       return `<a class="meal-slot breakfast-slot breakfast-${level.toLowerCase()} meal-link breakfast-link" href="${root}breakfast.html?${query}">
         <strong>Breakfast · ${level} · 1 adult portion</strong>
         <span>${escapeHTML(breakfast.meal)}</span>
-        <small><span>Cook fresh</span><b>View recipe →</b></small>
+        <small><span>${escapeHTML(cue)}</span><b>View recipe →</b></small>
       </a>`;
     };
     const addGrocery = (items, rawIngredient, source) => {
@@ -577,12 +607,13 @@
       };
       const current = item.measures.get(measure.dimension) || {...measure, value: 0};
       current.value += measure.value;
+      current.approximate ||= measure.approximate;
       item.measures.set(measure.dimension, current);
       item.sources[source] = source === "breakfast" ? item.sources[source] + 1 : 5;
       items.set(key, item);
     };
     const groceryAmount = item => [...item.measures.values()]
-      .map(measure => formatMeasure(measure, item.label))
+      .map(measure => `${measure.approximate ? "about " : ""}${formatMeasure(measure, item.label)}`)
       .join(" + ");
     const grocerySources = item => [
       item.sources.lunch && "5 lunches",
@@ -601,7 +632,7 @@
     console.assert(pantryStock.some(pattern => pattern.test("warm water")), "water should stay in pantry");
     console.assert(pantryStock.some(pattern => pattern.test("good-quality mayonnaise")), "mayonnaise should stay in pantry");
     console.assert(!pantryStock.some(pattern => pattern.test("Pepper Jack Cheese")), "pepper jack is not black pepper");
-    console.assert(clampWeek(0) === 1 && clampWeek(9) === 8, "week navigation should stay in range");
+    console.assert(clampWeek(0) === 1 && clampWeek(33) === WEEK_COUNT, "week navigation should stay in range");
     console.assert(canonicalIngredient("chopped onion") === "Onions", "onion variants should merge");
     console.assert(canonicalIngredient("hard corn taco shells") === "Taco shells", "taco shells should merge");
     console.assert(canonicalIngredient("can light coconut milk") === "Coconut milk", "coconut milk variants should merge");
@@ -612,11 +643,11 @@
     console.assert(formatMeasure(measureFor({name: "oz. green beans", value: 12.5, unit: null})) === "354.37 g", "leading source units should remain measurable");
     console.assert(formatMeasure({dimension: "volume", value: 775}, "Coconut milk") === "775 ml", "large liquid totals should stay metric");
     console.assert(formatMeasure({dimension: "volume", value: 319.2}, "Rolled oats") === "1.33 cups", "dry bulk volumes should stay in cups");
-    console.assert(formatMeasure(measureFor({name: "(15-ounce) can coconut milk", value: 1.25, unit: null})) === "1.25 \u00d7 15 oz cans \u00b7 buy 2", "package quantities should show exact use and whole-item purchase");
+    console.assert(formatMeasure(measureFor({name: "(15-ounce) can coconut milk", value: 1.25, unit: null}), "Coconut milk") === "531.55 ml", "liquid packages should normalize to the amount needed");
     console.assert(packageDescription("6.5 ounce") === "6.5 oz", "package decimals must be preserved");
     console.assert(formatMeasure(measureFor({name: "medium onion", value: 2.5, unit: null})) === "2.5 \u00b7 buy 3", "fractional counts should preserve exact use and purchase quantity");
     console.assert(measureFor({name: "onion", value: 1.25, unit: "unit"}).dimension === "count", "generic units must merge with unitless counts");
-    console.assert(breakfastPlans.length === 8, "each week should have a breakfast rotation");
+    console.assert(breakfastPlans.length >= 2, "breakfast needs a rotation");
     console.assert(breakfastPlans.every(plan => {
       const days = breakfastsFor(plan);
       return days.length === 7
@@ -627,6 +658,16 @@
         && plan.first.meal.includes("smoothie")
         && !plan.second.meal.includes("smoothie");
     }), "each week should alternate exactly two breakfasts");
+    console.assert(
+      breakfastReviewWeeks.every(week => breakfastForWeek(week).review)
+      && breakfastForWeek(2).review !== true,
+      "shakshuka should follow the expanding breakfast review schedule"
+    );
+    console.assert(
+      new Set(breakfastReviewWeeks.map(week => breakfastForWeek(week).first.meal)).size > 1
+      && breakfastReviewWeeks.every(week => breakfastForWeek(week).second.skill === "gentle egg poaching"),
+      "only shakshuka, not its Easy partner, should follow spaced review"
+    );
     console.assert(groceryCategory("Chicken breasts") === "Meat & seafood", "chicken should be grouped as meat");
     console.assert(groceryCategory("Carrots") === "Produce", "plural produce should stay in produce");
     console.assert(groceryCategory("Cauliflower") === "Produce", "cauliflower should stay in produce");
@@ -642,7 +683,6 @@
     console.assert(carryoverKey("soy sauce") === "soy sauce", "durable condiments belong in Bulk");
     console.assert(carryoverKey("prepared pasta sauce") === null, "prepared sauces do not belong in Bulk");
     console.assert(carryoverKey("bulk sweet Italian sausage") === null, "bulk meat does not belong in Bulk");
-    console.assert(Object.keys(techniqueLessons).length === 8, "each planned technique needs a guide");
 
     function mealLink(recipe, label, day, dayIndex) {
       const query = new URLSearchParams({
@@ -658,9 +698,11 @@
       </a>`;
     }
 
-    function renderTechniqueLesson(recipe) {
-      const name = technique(recipe);
+    function renderTechniqueLesson(recipe, fallbackName = "") {
+      const recipeName = technique(recipe);
+      const name = techniqueLessons[recipeName] ? recipeName : fallbackName;
       const lesson = techniqueLessons[name];
+      techniqueLesson.hidden = !lesson;
       if (!lesson) return;
       lessonTitle.textContent = name.replace(/\b\w/g, letter => letter.toUpperCase());
       lessonPrinciple.textContent = lesson.principle;
@@ -674,14 +716,49 @@
         .join(" · ");
     }
 
+    function renderPracticeStatus(recipe, breakfastSkill) {
+      const scheduled = defaultSchedule[cycleWeek - 1];
+      const practice = scheduled?.b.path === recipe.path ? scheduled.practice : null;
+      practiceStatus.className = "practice-status";
+      practiceStatus.hidden = false;
+      if (!practice) {
+        practiceStatus.textContent = "Custom";
+        return;
+      }
+      practiceStatus.classList.add(`is-${practice.kind}`);
+      if (practice.kind === "review") {
+        practiceStatus.textContent = practice.stage
+          ? `Review ${practice.stage} of ${REVIEW_OFFSETS.length - 1} · last Week ${practice.previousWeek}${practice.nextWeek ? ` · next Week ${practice.nextWeek}` : ""}`
+          : `New · next Week ${practice.nextWeek}`;
+      } else if (practice.kind === "variety" && breakfastSkill) {
+        const breakfastPractice = breakfastPracticeForWeek(cycleWeek);
+        practiceStatus.className = "practice-status is-review";
+        practiceStatus.textContent = breakfastPractice?.stage
+          ? `Breakfast review ${breakfastPractice.stage} of ${breakfastReviewWeeks.length - 1}`
+          : "Breakfast · New";
+      } else if (practice.kind === "variety") {
+        practiceStatus.hidden = true;
+      } else {
+        practiceStatus.textContent = "One-time";
+      }
+    }
+
     function render() {
       const a = recipes.find(recipe => recipe.path === mealA.value);
       const b = recipes.find(recipe => recipe.path === mealB.value);
-      const breakfastPlan = breakfastPlans.find(plan => plan.id === breakfastSelect.value) || breakfastPlans[0];
+      const breakfastPlan = resolveBreakfastPlan(breakfastSelect.value, cycleWeek)
+        || breakfastForWeek(cycleWeek);
       const breakfastDays = breakfastsFor(breakfastPlan);
       if (!a || !b) return;
-      skill.textContent = technique(b).replace(/\b\w/g, letter => letter.toUpperCase());
-      renderTechniqueLesson(b);
+      const lesson = techniqueLessons[technique(b)];
+      const breakfastSkill = breakfastDays.find(day => day.skill)?.skill || "";
+      skill.textContent = lesson
+        ? technique(b).replace(/\b\w/g, letter => letter.toUpperCase())
+        : breakfastSkill
+          ? breakfastSkill.replace(/\b\w/g, letter => letter.toUpperCase())
+          : "Variety";
+      renderPracticeStatus(b, breakfastSkill);
+      renderTechniqueLesson(b, breakfastSkill);
       batchNote.innerHTML = `Sunday: cook
         <a href="${root}${a.path}?servings=5&week=${cycleWeek}">${escapeHTML(a.title)} · 5 lunches</a>
         and <a href="${root}${b.path}?servings=5&week=${cycleWeek}">${escapeHTML(b.title)} · 5 dinners</a>.
@@ -773,6 +850,8 @@
     const groceries = document.getElementById("groceries");
     const batchNote = document.getElementById("batch-note");
     const skill = document.getElementById("skill");
+    const practiceStatus = document.getElementById("practice-status");
+    const techniqueLesson = document.getElementById("technique-lesson");
     const lessonTitle = document.getElementById("lesson-title");
     const lessonPrinciple = document.getElementById("lesson-principle");
     const lessonSteps = document.getElementById("lesson-steps");
@@ -789,10 +868,19 @@
       node.textContent = plan.name;
       breakfastSelect.append(node);
     });
+    const breakfastReviewOption = document.createElement("option");
+    breakfastReviewOption.value = breakfastReviewPlanId;
+    breakfastSelect.append(breakfastReviewOption);
+    const updateBreakfastReviewOption = () => {
+      breakfastReviewOption.textContent = resolveBreakfastPlan(
+        breakfastReviewPlanId,
+        cycleWeek
+      ).name;
+    };
 
     function renderWeekNav() {
-      cycle.textContent = `Choose a week · ${cycleWeek} of 8`;
-      cycleProgress.innerHTML = Array.from({length: 8}, (_, index) => {
+      cycle.textContent = `Choose a week · ${cycleWeek} of ${WEEK_COUNT}`;
+      cycleProgress.innerHTML = Array.from({length: WEEK_COUNT}, (_, index) => {
         const number = index + 1;
         return `<button type="button" data-week="${number}" ${number === cycleWeek ? 'class="is-current" aria-current="step"' : ""}>Week ${number}</button>`;
       }).join("");
@@ -812,11 +900,12 @@
       checked = new Set(state.checked || []);
       carryoverDismissed = new Set(state.carryoverDismissed || []);
       const fallback = defaultSchedule[cycleWeek - 1];
-      breakfastSelect.value = breakfastPlans.some(plan => plan.id === state.breakfast)
-        ? state.breakfast : breakfastPlans[(cycleWeek - 1) % breakfastPlans.length].id;
+      updateBreakfastReviewOption();
+      breakfastSelect.value = resolveBreakfastPlan(state.breakfast, cycleWeek)
+        ? state.breakfast : breakfastForWeek(cycleWeek).id;
       mealA.value = easy.some(([recipe]) => recipe.path === state.a)
         ? state.a : fallback?.a.path;
-      mealB.value = stretch.some(([recipe]) => recipe.path === state.b)
+      mealB.value = dinners.some(recipe => recipe.path === state.b)
         ? state.b : fallback?.b.path;
       renderWeekNav();
       render();
@@ -830,29 +919,49 @@
       );
       easy = storageReady.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Approachable").sort(byCost);
       stretch = storageReady.map((recipe, index) => [recipe, index]).filter(([recipe]) => difficulty(recipe) === "Stretch").sort(byCost);
-      console.assert(easy.length >= 8 && stretch.length >= 8, "eight weeks need unique planner-ready choices");
+      console.assert(easy.length >= 8 && stretch.length >= 8, "planner needs at least eight approachable and eight stretch dishes");
       console.assert(stretch.every(([recipe]) => techniqueLessons[technique(recipe)]), "every stretch recipe needs a technique guide");
+      dinners = [
+        ...stretch.map(([recipe]) => recipe),
+        ...easy.map(([recipe]) => recipe)
+      ];
       easy.forEach(([recipe]) => {
         mealA.append(option(recipe));
       });
-      (stretch.length ? stretch : easy).forEach(([recipe]) => {
-        mealB.append(option(recipe));
+      dinners.forEach(recipe => {
+        mealB.append(option(recipe, true));
       });
       defaultSchedule = buildDefaultSchedule();
-      console.assert(defaultSchedule.length === 8
-        && defaultSchedule.every(({a, b}) => overlapScore(a, b) > 0),
-      "each default week needs a unique overlapping pair");
+      const reviewPaths = new Set(stretch
+        .map(([recipe]) => recipe)
+        .filter(recipe => recipe.tags?.includes("spaced-review"))
+        .map(recipe => recipe.path));
+      console.assert(
+        defaultSchedule.length === WEEK_COUNT
+        && defaultSchedule.every(({a, b}) => a && b && a.path !== b.path)
+        && defaultSchedule.every(({a}, index) => !index || a.path !== defaultSchedule[index - 1].a.path),
+        "the 32-week curriculum needs complete, varied pairs"
+      );
+      console.assert(
+        reviewPaths.size === 5
+        && [...reviewPaths].every(path =>
+          defaultSchedule.filter(({b, practice}) =>
+            b.path === path && practice.kind === "review"
+          ).length === REVIEW_OFFSETS.length
+        )
+        && defaultSchedule.every(({b, practice}) =>
+          practice.kind !== "review" || reviewPaths.has(b.path)
+        ),
+        "only tagged complex techniques should enter spaced review"
+      );
       [breakfastSelect, mealA, mealB].forEach(control => control.addEventListener("change", () => {
         checked.clear();
         carryoverDismissed.clear();
         render();
       }));
       reroll.addEventListener("click", () => {
-        const pair = nextPairForWeek();
-        if (pair) {
-          mealA.value = pair.a.path;
-          mealB.value = pair.b.path;
-        }
+        const lunch = nextLunchForWeek();
+        if (lunch) mealA.value = lunch.path;
         checked.clear();
         carryoverDismissed.clear();
         render();
