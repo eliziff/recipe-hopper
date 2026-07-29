@@ -255,7 +255,7 @@ def scaled_quantity(value: str, factor: Fraction) -> str:
     return display(parsed * factor) if parsed is not None else value
 
 
-PACKAGE_CONTAINERS = r"cans?|jars?|packages?|boxes?|bottles?|bags?|containers?"
+PACKAGE_CONTAINERS = r"cans?|jars?|packages?|box(?:es)?|bottles?|bags?|containers?"
 PACKAGE_SIZE_UNIT = (
     r"ounces?|oz|pounds?|lbs?|grams?|g|kilograms?|kg|"
     r"milliliters?|millilitres?|ml|liters?|litres?|l"
