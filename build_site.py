@@ -180,7 +180,14 @@ portion_script = """
     .find(node => node.textContent.trim() === "Directions");
   if (directions) directions.textContent = "Directions · cook Sunday batch";
   const rows = [...(heading?.parentElement.querySelectorAll("ul li") || [])];
-  const batchAmounts = rows.map(row => row.lastElementChild.textContent.trim() || "as needed");
+  const unspecified = name => /\b(?:salt|pepper)\b/i.test(name)
+    ? "to taste"
+    : /\b(?:cilantro|scallions?|parsley|basil)\b/i.test(name) && /optional/i.test(name)
+      ? "for serving"
+      : "as needed";
+  const batchAmounts = rows.map((row, index) =>
+    row.lastElementChild.textContent.trim() || unspecified(ingredients[index]?.name || "")
+  );
   const params = new URLSearchParams(location.search);
   const baseServings = 5;
   let servings = Number(params.get("servings")) === 1 ? 1 : baseServings;
@@ -193,7 +200,7 @@ portion_script = """
       const occurrence = occurrences.get(key) || 0;
       occurrences.set(key, occurrence + 1);
       row.lastElementChild.textContent = servings === 1
-        ? portionAmounts.get(key)?.[occurrence] || "as needed"
+        ? portionAmounts.get(key)?.[occurrence] || unspecified(ingredients[index].name)
         : batchAmounts[index];
     });
     document.getElementById("portion-label").textContent = servings === 1
@@ -343,6 +350,15 @@ def display_quantity(quantity):
     return " ".join(filter(None, (amount, unit)))
 
 
+def unspecified_amount(name):
+    label = name.lower()
+    if re.search(r"\b(?:salt|pepper)\b", label):
+        return "to taste"
+    if re.search(r"\b(?:cilantro|scallions?|parsley|basil)\b", label) and "optional" in label:
+        return "for serving"
+    return "as needed"
+
+
 def human_duration(match):
     prefix = match.group(1)
     hours, minutes, seconds = (int(value or 0) for value in match.groups()[1:])
@@ -414,7 +430,11 @@ def scaled_ingredients(path):
     return [
         {
             "name": ingredient["name"],
-            "display": display_quantity(ingredient.get("quantity")),
+            "display": (
+                display_quantity(ingredient.get("quantity"))
+                if ingredient.get("quantity")
+                else unspecified_amount(ingredient["name"])
+            ),
         }
         for ingredient in json.loads(result.stdout)["ingredients"]
     ]
