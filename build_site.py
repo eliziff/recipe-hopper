@@ -180,11 +180,15 @@ portion_script = """
     .find(node => node.textContent.trim() === "Directions");
   if (directions) directions.textContent = "Directions · cook Sunday batch";
   const rows = [...(heading?.parentElement.querySelectorAll("ul li") || [])];
-  const unspecified = name => /\b(?:salt|pepper)\b/i.test(name)
-    ? "to taste"
+  const unspecified = name => /\bsalt\b/i.test(name)
+    ? "to taste (start with 1/2 tsp)"
+    : /\bpepper\b/i.test(name)
+      ? "to taste (start with 1/4 tsp)"
     : /\b(?:cilantro|scallions?|parsley|basil)\b/i.test(name) && /optional/i.test(name)
-      ? "for serving"
-      : "as needed";
+      ? "for serving (about 1 tbsp per portion)"
+      : /\b(?:oil|butter|spray)\b/i.test(name)
+        ? "for cooking (about 1 tbsp)"
+        : "see directions for amount";
   const batchAmounts = rows.map((row, index) =>
     row.lastElementChild.textContent.trim() || unspecified(ingredients[index]?.name || "")
   );
@@ -352,11 +356,15 @@ def display_quantity(quantity):
 
 def unspecified_amount(name):
     label = name.lower()
-    if re.search(r"\b(?:salt|pepper)\b", label):
-        return "to taste"
+    if re.search(r"\bsalt\b", label):
+        return "to taste (start with 1/2 tsp)"
+    if re.search(r"\bpepper\b", label):
+        return "to taste (start with 1/4 tsp)"
     if re.search(r"\b(?:cilantro|scallions?|parsley|basil)\b", label) and "optional" in label:
-        return "for serving"
-    return "as needed"
+        return "for serving (about 1 tbsp per portion)"
+    if re.search(r"\b(?:oil|butter|spray)\b", label):
+        return "for cooking (about 1 tbsp)"
+    return "see directions for amount"
 
 
 def human_duration(match):
