@@ -2,6 +2,7 @@
 """Build CookCLI output and apply Recipe Hopper's static-site additions."""
 
 import argparse
+import atexit
 import html
 import json
 import os
@@ -9,8 +10,11 @@ import re
 import shutil
 import stat
 import subprocess
+import tempfile
 from fractions import Fraction
 from pathlib import Path
+
+from hopper import normalize_cook_source
 
 ROOT = Path(__file__).parent
 SITE = ROOT / "_site"
@@ -23,8 +27,18 @@ if SITE.exists():
     shutil.rmtree(SITE, onerror=lambda function, path, _: (
         os.chmod(path, stat.S_IWRITE), function(path)
     ))
+
+# Build from a normalized copy so the curated catalogue is fixed without
+# rewriting every source file. Newly imported recipes are normalized by the
+# same helper in hopper.py before they reach this step.
+BUILD_RECIPES = Path(tempfile.mkdtemp(prefix="build-recipes-", dir=ROOT))
+atexit.register(shutil.rmtree, BUILD_RECIPES, ignore_errors=True)
+shutil.copytree(ROOT / "recipes", BUILD_RECIPES, dirs_exist_ok=True)
+for cook_path in BUILD_RECIPES.glob("*.cook"):
+    source = cook_path.read_text(encoding="utf-8")
+    cook_path.write_text(normalize_cook_source(source), encoding="utf-8")
 subprocess.run([
-    args.cook, "build", "web", "--base-path", str(ROOT / "recipes"),
+    args.cook, "build", "web", "--base-path", str(BUILD_RECIPES),
     "--base-url", "/recipe-hopper/",
 ], cwd=ROOT, check=True)
 
@@ -255,7 +269,27 @@ def display_quantity(quantity):
             ))) or "0"
         else:
             amount = f'{number["value"]:.2f}'.rstrip("0").rstrip(".")
-    return " ".join(filter(None, (amount, quantity.get("unit"))))
+    unit = quantity.get("unit")
+    if unit in {"g", "kg", "ml", "l"}:
+        try:
+            metric = float(amount)
+            amount = f"{metric:.1f}".rstrip("0").rstrip(".") if metric < 10 else str(round(metric))
+        except ValueError:
+            pass
+    return " ".join(filter(None, (amount, unit)))
+
+
+def human_duration(match):
+    prefix = match.group(1)
+    hours, minutes, seconds = (int(value or 0) for value in match.groups()[1:])
+    parts = []
+    if hours:
+        parts.append(f"{hours} hr")
+    if minutes:
+        parts.append(f"{minutes} min")
+    if seconds and not parts:
+        parts.append(f"{seconds} sec")
+    return prefix + (" ".join(parts) or "0 min")
 
 
 def scaled_ingredients(path):
@@ -284,7 +318,7 @@ search_index = sorted(
 portion_by_path = {}
 for recipe in search_index:
     page = SITE / recipe["path"]
-    source = ROOT / "recipes" / f'{Path(recipe["path"]).stem}.cook'
+    source = BUILD_RECIPES / f'{Path(recipe["path"]).stem}.cook'
     source_text = source.read_text(encoding="utf-8")
     yield_verified = bool(re.search(r"^yield_verified:\s*true\s*$", source_text, re.M | re.I))
     planner_ready = bool(re.search(r"^planner_ready:\s*true\s*$", source_text, re.M | re.I))
@@ -352,6 +386,12 @@ for page in SITE.rglob("*.html"):
     )
     text = text.replace("Recipes - Cook</title>", "Recipe Hopper</title>")
     text = text.replace(" - Cook</title>", " &middot; Recipe Hopper</title>")
+    text = re.sub(
+        r"(Time:\s*)PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?\b",
+        human_duration,
+        text,
+        flags=re.I,
+    )
     text = re.sub(
         r'<a href="[^"]+\.cook"\s+download.*?title="Download \.cook source".*?</a>',
         "",
