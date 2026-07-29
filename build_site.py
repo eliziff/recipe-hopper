@@ -252,6 +252,44 @@ def parsed_value(value):
     return max(numbers) if len(numbers) <= 2 and all(item is not None for item in numbers) else None
 
 
+def human_fraction(value):
+    """Render a decimal amount as a compact kitchen fraction."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    fraction = Fraction(str(number)).limit_denominator(48)
+    if abs(float(fraction) - number) > 0.02:
+        return f"{number:.2f}".rstrip("0").rstrip(".")
+    whole, remainder = divmod(fraction.numerator, fraction.denominator)
+    if not remainder:
+        return str(whole)
+    part = f"{remainder}/{fraction.denominator}"
+    return f"{whole} {part}" if whole else part
+
+
+def kitchen_cups(value):
+    """Render cups as common cup measures plus tablespoons/teaspoons."""
+    total_teaspoons = max(0, round(float(value) * 48))
+    whole, remainder = divmod(total_teaspoons, 48)
+    common = {
+        12: "1/4", 16: "1/3", 18: "3/8", 24: "1/2", 32: "2/3",
+        36: "3/4", 40: "5/6", 42: "7/8",
+    }
+    if remainder in common:
+        cup_text = f"{whole} {common[remainder]}" if whole else common[remainder]
+        return f"{cup_text} cup{'s' if whole != 0 or remainder != 48 else ''}"
+    parts = []
+    if whole:
+        parts.append(f"{whole} cup{'s' if whole != 1 else ''}")
+    tablespoons, teaspoons = divmod(remainder, 3)
+    if tablespoons:
+        parts.append(f"{tablespoons} tbsp")
+    if teaspoons:
+        parts.append(f"{teaspoons} tsp")
+    return " + ".join(parts) or "0 tsp"
+
+
 def display_quantity(quantity):
     if not quantity:
         return "as needed"
@@ -270,6 +308,13 @@ def display_quantity(quantity):
         else:
             amount = f'{number["value"]:.2f}'.rstrip("0").rstrip(".")
     unit = quantity.get("unit")
+    if unit in {"c", "cup", "cups"}:
+        try:
+            return kitchen_cups(number_value(amount))
+        except (TypeError, ValueError):
+            pass
+    if unit not in {"c", "cup", "cups", "g", "kg", "ml", "l"}:
+        amount = human_fraction(amount)
     if unit in {"g", "kg", "ml", "l"}:
         try:
             metric = float(amount)
@@ -290,6 +335,34 @@ def human_duration(match):
     if seconds and not parts:
         parts.append(f"{seconds} sec")
     return prefix + (" ".join(parts) or "0 min")
+
+
+def humanize_static_ingredients(text):
+    def row_amount(match):
+        value = match.group(2).strip()
+        unit = match.group(3)
+        if unit in {"c", "cup", "cups"}:
+            value = kitchen_cups(value)
+            unit = None
+        else:
+            value = human_fraction(value)
+        return f"{match.group(1)}{value}{f' {unit}' if unit else ''}{match.group(4)}"
+
+    text = re.sub(
+        r'(<span class="text-orange-700 font-semibold ml-2">\s*)'
+        r'(\d+(?:\.\d+)?)(?:\s+([A-Za-z]+))?(\s*</span>)',
+        row_amount,
+        text,
+    )
+    return re.sub(
+        r'(:\s*)(\d+(?:\.\d+)?)(?:\s+([A-Za-z]+))?(?=,?\s*</span>)',
+        lambda match: (
+            f"{match.group(1)}"
+            f"{kitchen_cups(match.group(2)) if match.group(3) in {'c', 'cup', 'cups'} else human_fraction(match.group(2))}"
+            f"{'' if match.group(3) in {'c', 'cup', 'cups'} else f' {match.group(3)}' if match.group(3) else ''}"
+        ),
+        text,
+    )
 
 
 def scaled_ingredients(path):
@@ -331,6 +404,18 @@ for recipe in search_index:
         re.S,
     )
     data = json.loads(match.group(1))
+    for section in data["sections"]:
+        for ingredient in section.get("ingredients", []):
+            quantity = ingredient.get("quantity")
+            if isinstance(quantity, str) and re.fullmatch(r"\d+(?:\.\d+)?", quantity):
+                ingredient["quantity"] = human_fraction(quantity)
+        for step in section.get("steps", []):
+            for ingredient in step.get("ingredients", []):
+                quantity = ingredient.get("quantity")
+                if isinstance(quantity, str) and re.fullmatch(r"\d+(?:\.\d+)?", quantity):
+                    ingredient["quantity"] = human_fraction(quantity)
+    serialized_data = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    text = text[:match.start(1)] + serialized_data + text[match.end(1):]
     details = [
         ingredient
         for section in data["sections"]
@@ -392,6 +477,7 @@ for page in SITE.rglob("*.html"):
         text,
         flags=re.I,
     )
+    text = humanize_static_ingredients(text)
     text = re.sub(
         r'<a href="[^"]+\.cook"\s+download.*?title="Download \.cook source".*?</a>',
         "",
