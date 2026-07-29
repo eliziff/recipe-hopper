@@ -290,6 +290,23 @@ def kitchen_cups(value):
     return " + ".join(parts) or "0 tsp"
 
 
+def metric_amount(value, unit):
+    unit = (unit or "").lower().rstrip(".")
+    number = number_value(value)
+    if number is None:
+        return str(value), unit
+    if unit in {"oz", "ounce", "ounces"}:
+        number *= 28.3495
+        unit = "g"
+    elif unit in {"lb", "lbs", "pound", "pounds"}:
+        number *= 453.592
+        unit = "g"
+    else:
+        return str(value), unit
+    amount = f"{number:.1f}".rstrip("0").rstrip(".") if number < 10 else str(int(number + 0.5))
+    return amount, unit
+
+
 def display_quantity(quantity):
     if not quantity:
         return "as needed"
@@ -308,6 +325,8 @@ def display_quantity(quantity):
         else:
             amount = f'{number["value"]:.2f}'.rstrip("0").rstrip(".")
     unit = quantity.get("unit")
+    if unit and unit.lower().rstrip(".") in {"oz", "ounce", "ounces", "lb", "lbs", "pound", "pounds"}:
+        amount, unit = metric_amount(amount, unit)
     if unit in {"c", "cup", "cups"}:
         try:
             return kitchen_cups(number_value(amount))
@@ -341,7 +360,9 @@ def humanize_static_ingredients(text):
     def row_amount(match):
         value = match.group(2).strip()
         unit = match.group(3)
-        if unit in {"c", "cup", "cups"}:
+        if unit and unit.lower().rstrip(".") in {"oz", "ounce", "ounces", "lb", "lbs", "pound", "pounds"}:
+            value, unit = metric_amount(value, unit)
+        elif unit in {"c", "cup", "cups"}:
             value = kitchen_cups(value)
             unit = None
         else:
@@ -358,11 +379,27 @@ def humanize_static_ingredients(text):
         r'(:\s*)(\d+(?:\.\d+)?)(?:\s+([A-Za-z]+))?(?=,?\s*</span>)',
         lambda match: (
             f"{match.group(1)}"
-            f"{kitchen_cups(match.group(2)) if match.group(3) in {'c', 'cup', 'cups'} else human_fraction(match.group(2))}"
-            f"{'' if match.group(3) in {'c', 'cup', 'cups'} else f' {match.group(3)}' if match.group(3) else ''}"
+            f"{kitchen_cups(match.group(2)) if match.group(3) in {'c', 'cup', 'cups'} else metric_amount(match.group(2), match.group(3))[0] if match.group(3) and match.group(3).lower().rstrip('.') in {'oz', 'ounce', 'ounces', 'lb', 'lbs', 'pound', 'pounds'} else human_fraction(match.group(2))}"
+            f"{'' if match.group(3) in {'c', 'cup', 'cups'} else f' {metric_amount(match.group(2), match.group(3))[1]}' if match.group(3) and match.group(3).lower().rstrip('.') in {'oz', 'ounce', 'ounces', 'lb', 'lbs', 'pound', 'pounds'} else f' {match.group(3)}' if match.group(3) else ''}"
         ),
         text,
     )
+
+
+def humanize_ingredient_text(value):
+    match = re.match(r"^\s*(\d+(?:\.\d+)?(?:\s+\d+/\d+)?)\s+([A-Za-z]+)\s+(.+)$", value)
+    if not match:
+        return value
+    amount, unit, name = match.groups()
+    normalized = unit.lower().rstrip(".")
+    if normalized in {"oz", "ounce", "ounces", "lb", "lbs", "pound", "pounds"}:
+        amount, unit = metric_amount(amount, unit)
+    elif normalized in {"c", "cup", "cups"}:
+        amount = kitchen_cups(amount)
+        return f"{amount} {name}"
+    else:
+        amount = human_fraction(amount)
+    return f"{amount} {unit} {name}"
 
 
 def scaled_ingredients(path):
@@ -408,12 +445,18 @@ for recipe in search_index:
         for ingredient in section.get("ingredients", []):
             quantity = ingredient.get("quantity")
             if isinstance(quantity, str) and re.fullmatch(r"\d+(?:\.\d+)?", quantity):
-                ingredient["quantity"] = human_fraction(quantity)
+                if ingredient.get("unit") and ingredient["unit"].lower().rstrip(".") in {"oz", "ounce", "ounces", "lb", "lbs", "pound", "pounds"}:
+                    ingredient["quantity"], ingredient["unit"] = metric_amount(quantity, ingredient["unit"])
+                else:
+                    ingredient["quantity"] = human_fraction(quantity)
         for step in section.get("steps", []):
             for ingredient in step.get("ingredients", []):
                 quantity = ingredient.get("quantity")
                 if isinstance(quantity, str) and re.fullmatch(r"\d+(?:\.\d+)?", quantity):
-                    ingredient["quantity"] = human_fraction(quantity)
+                    if ingredient.get("unit") and ingredient["unit"].lower().rstrip(".") in {"oz", "ounce", "ounces", "lb", "lbs", "pound", "pounds"}:
+                        ingredient["quantity"], ingredient["unit"] = metric_amount(quantity, ingredient["unit"])
+                    else:
+                        ingredient["quantity"] = human_fraction(quantity)
     serialized_data = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     text = text[:match.start(1)] + serialized_data + text[match.end(1):]
     page.write_text(text, encoding="utf-8")
@@ -463,6 +506,20 @@ recipe_by_path = {recipe["path"]: recipe for recipe in search_index}
 
 for page in SITE.rglob("*.html"):
     text = page.read_text(encoding="utf-8")
+    schema_match = re.search(
+        r'<script type="application/ld\+json">\s*(.*?)\s*</script>',
+        text,
+        re.S,
+    )
+    if schema_match:
+        schema = json.loads(schema_match.group(1))
+        if isinstance(schema.get("recipeIngredient"), list):
+            schema["recipeIngredient"] = [
+                humanize_ingredient_text(item) if isinstance(item, str) else item
+                for item in schema["recipeIngredient"]
+            ]
+            serialized_schema = json.dumps(schema, ensure_ascii=False, separators=(",", ":"))
+            text = text[:schema_match.start(1)] + serialized_schema + text[schema_match.end(1):]
     text = re.sub(
         r'<nav class="bg-white shadow-lg rounded-2xl mb-8 relative">.*?</nav>',
         header,
