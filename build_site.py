@@ -416,6 +416,7 @@ for recipe in search_index:
                     ingredient["quantity"] = human_fraction(quantity)
     serialized_data = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     text = text[:match.start(1)] + serialized_data + text[match.end(1):]
+    page.write_text(text, encoding="utf-8")
     details = [
         ingredient
         for section in data["sections"]
