@@ -255,6 +255,200 @@ def scaled_quantity(value: str, factor: Fraction) -> str:
     return display(parsed * factor) if parsed is not None else value
 
 
+PACKAGE_CONTAINERS = r"cans?|jars?|packages?|boxes?|bottles?|bags?|containers?"
+PACKAGE_SIZE_UNIT = (
+    r"ounces?|oz|pounds?|lbs?|grams?|g|kilograms?|kg|"
+    r"milliliters?|millilitres?|ml|liters?|litres?|l"
+)
+PACKAGE_NUMBER = r"(?:\d+(?:\.\d+)?|\d+/\d+)"
+LIQUID_PACKAGE_WORDS = re.compile(
+    r"\b(?:lager|beer|wine|coconut milk|tomato sauce|pasta sauce|"
+    r"broth|stock|soup|cream|evaporated milk|condensed milk)\b",
+    re.I,
+)
+
+
+def _fraction(value) -> Fraction | None:
+    try:
+        return sum(
+            (Fraction(part) for part in str(value).strip().split()),
+            Fraction(),
+        )
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def _package_parts(name: str) -> tuple[str, str, str] | None:
+    """Return (size description, container, label) for a leading package size."""
+    parenthetical = re.match(r"^\s*\(([^)]+)\)\s*(.+)$", name)
+    if parenthetical:
+        size, remainder = parenthetical.groups()
+        inside_container = re.search(
+            rf"\b({PACKAGE_CONTAINERS})\s*$",
+            size,
+            re.I,
+        )
+        if inside_container:
+            container = inside_container.group(1)
+            size = size[:inside_container.start()].strip()
+            label = remainder
+        else:
+            outside_container = re.match(
+                rf"({PACKAGE_CONTAINERS})(?:\s+or\s+{PACKAGE_CONTAINERS})?"
+                r"(?:\s+of)?\s+(.+)$",
+                remainder,
+                re.I,
+            )
+            if not outside_container:
+                return None
+            container, label = outside_container.groups()
+        return size, container, label
+
+    bare = re.match(
+        rf"^\s*x?\s*({PACKAGE_NUMBER}\s*-?\s*(?:{PACKAGE_SIZE_UNIT})\.?)"
+        rf"\s+({PACKAGE_CONTAINERS})(?:\s+or\s+{PACKAGE_CONTAINERS})?"
+        r"(?:\s+of)?\s+(.+)$",
+        name,
+        re.I,
+    )
+    return bare.groups() if bare else None
+
+
+def _package_size(value: str) -> tuple[Fraction, Fraction, str] | None:
+    """Return the low/high package size and its metric unit."""
+    value = (
+        value.lower()
+        .replace("–", "-")
+        .replace("—", "-")
+        .replace("[", " ")
+        .replace("]", " ")
+    )
+
+    metric = re.search(
+        rf"({PACKAGE_NUMBER})\s*-?\s*"
+        r"(kg|kilograms?|g|grams?|ml|milliliters?|millilitres?|"
+        r"l|liters?|litres?)\b",
+        value,
+        re.I,
+    )
+    if metric:
+        size = _fraction(metric.group(1))
+        if size is None:
+            return None
+        unit = metric.group(2).lower()
+        if unit.startswith("k"):
+            size *= 1000
+            unit = "g"
+        elif unit.startswith("l"):
+            size *= 1000
+            unit = "ml"
+        elif unit.startswith("m"):
+            unit = "ml"
+        else:
+            unit = "g"
+        return size, size, unit
+
+    range_size = re.search(
+        rf"({PACKAGE_NUMBER})\s*-\s*(?:(?:or|to)\s*)?"
+        rf"({PACKAGE_NUMBER})\s*-?\s*(ounces?|oz|pounds?|lbs?)\b",
+        value,
+        re.I,
+    )
+    if range_size:
+        low, high = map(_fraction, range_size.groups()[:2])
+        raw_unit = range_size.group(3).lower()
+    else:
+        single_size = re.search(
+            rf"({PACKAGE_NUMBER})\s*-?\s*(ounces?|oz|pounds?|lbs?)\b",
+            value,
+            re.I,
+        )
+        if not single_size:
+            return None
+        low = high = _fraction(single_size.group(1))
+        raw_unit = single_size.group(2).lower()
+    if low is None or high is None:
+        return None
+    grams = (
+        Fraction(45359237, 100000)
+        if raw_unit.startswith(("pound", "lb"))
+        else Fraction(45359237, 1600000)
+    )
+    return low * grams, high * grams, "imperial"
+
+
+def _human_metric(value: Fraction) -> str:
+    number = float(value)
+    rounded = round(number, 1) if abs(number) < 10 else round(number)
+    return f"{rounded:g}"
+
+
+def normalize_package_ingredient(
+    name: str,
+    quantity,
+    unit: str | None = None,
+) -> tuple[str, str, str] | None:
+    """Convert a fractional package count into an actual metric amount."""
+    if unit:
+        return None
+    package_count = _fraction(quantity)
+    package = _package_parts(name)
+    if package_count is None or package_count <= 0 or not package:
+        return None
+    size_text, container, label = package
+    package_size = _package_size(size_text)
+    if not package_size:
+        return None
+    low, high, size_unit = package_size
+
+    label = re.sub(r"^\s*of\s+", "", label, flags=re.I).strip()
+    container = container.lower()
+    if container.startswith("jar") and not re.match(r"jarred\b", label, re.I):
+        label = f"jarred {label}"
+    elif container.startswith("can") and not re.match(r"canned\b", label, re.I):
+        label = f"canned {label}"
+    elif container.startswith("bottle") and not re.match(r"bottled\b", label, re.I):
+        label = f"bottled {label}"
+
+    output_unit = size_unit
+    if size_unit == "imperial":
+        if LIQUID_PACKAGE_WORDS.search(label):
+            grams_per_ounce = Fraction(45359237, 1600000)
+            millilitres_per_ounce = Fraction(473176473, 16000000)
+            low = low / grams_per_ounce * millilitres_per_ounce
+            high = high / grams_per_ounce * millilitres_per_ounce
+            output_unit = "ml"
+        else:
+            output_unit = "g"
+
+    low *= package_count
+    high *= package_count
+    amount = _human_metric(low)
+    if high != low:
+        amount = f"{amount}-{_human_metric(high)}"
+    return label, amount, output_unit
+
+
+def normalize_cook_source(value: str) -> str:
+    """Normalize explicit package sizes in every Cooklang ingredient."""
+    pattern = re.compile(r"@([^{}\n]+)\{([^{}\n]*)\}")
+
+    def replace(match: re.Match) -> str:
+        name, measure = match.groups()
+        quantity, separator, unit = measure.partition("%")
+        normalized = normalize_package_ingredient(
+            name,
+            quantity,
+            unit if separator else None,
+        )
+        if not normalized:
+            return match.group(0)
+        clean_name, clean_quantity, clean_unit = normalized
+        return f"@{clean_name}{{{clean_quantity}%{clean_unit}}}"
+
+    return pattern.sub(replace, value)
+
+
 def cook_ingredient(value: str, factor: Fraction = Fraction(1)) -> str:
     value = clean(value).replace("@", "")
     amount = r"(?:\d+\s*[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?(?:\s+\d+/\d+)?|\d+/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])"
